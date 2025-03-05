@@ -35,9 +35,11 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
 
-      # Step 5: Build the project
-      - name: Build project
-        run: npm run build
+      # Step 5: Clean dist directory and build the project
+      - name: Clean dist and build project
+        run: |
+          rm -rf dist
+          npm run build
 
       # Step 6: Bump version and create changelog
       - name: Bump version and create changelog
