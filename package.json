@@ -14,7 +14,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Contract generation",
   "dependencies": {
     "jspdf": "^3.0.0",
     "jspdf-autotable": "^5.0.2"
