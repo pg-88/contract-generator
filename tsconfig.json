@@ -5,7 +5,7 @@
     "declaration": true,
     "removeComments": false,
     "outDir": "./dist",
-    "rootDir": "./src",             
+    "rootDir": ".",
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
