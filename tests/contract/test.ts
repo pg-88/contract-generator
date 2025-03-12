@@ -17,7 +17,13 @@ async function testDocumentGenerator() {
         },
         tipOutput: 'd', // 'f' to open in a new window for visual inspection.
         dynamicFields: {
-            numeroContratto: 'ABC123'
+            numeroContratto: 'ABC123',
+            data: new Date().toLocaleDateString('it-IT', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            })
+
         },
         dynamicElements: {
             TABLE1: {

@@ -6,9 +6,9 @@
   "types": "index.d.ts",
   "scripts": {
     "release": "standard-version",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "clean": "rm -rf dist",
-    "build": "npm run clean && tsc",
+    "test": "cd tests/contract && node test.js",
+    "clean": "powershell -Command \"Remove-Item -Force -Recurse \"dist/*\", \"ContractGenerator.js\", \"tests\\contract\\*.pdf\" -ErrorAction SilentlyContinue\"",
+    "build": "npm run clean && tsc ContractGenerator.ts && tsc",
     "prepublishOnly": "npm run build"
   },
   "keywords": [],

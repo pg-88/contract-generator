@@ -25,6 +25,14 @@
         "installPath": "./Montserrat-Bold.ttf"
       },
       {
+        "id": "_montserrat",
+        "nome": "montserrat",
+        "dimensione": 12,
+        "colore": "#6fcdc2",
+        "style": "normal bold",
+        "installPath": "./Montserrat-Regular.ttf, ./Montserrat-Bold.ttf"
+      },
+      {
         "id": "montserrat",
         "nome": "montserrat",
         "dimensione": 12,
@@ -35,19 +43,15 @@
     ],
     "margini": {
       "sx": 10,
-      "dx": 19,
-      "alto": 10,
+      "dx": 20,
+      "alto": 18,
       "basso": 10
     },
-    "interlinea": 1.01,
     "staccoriga": 5,
     "rientro": 5,
     "box": {
-      "background": "#ff00ee",
-      "raggio": 2,
-      "padding": 2,
-      "lineWidth": 0.12,
-      "lineColor": "#cc1269"
+      "backgrund": "#d9efee",
+      "raggio": 5
     }
   },
   "contenuti": [
@@ -55,16 +59,13 @@
       "testo": "Contratto di servizio tra **bnbkit srl** e $cliente:denominazione$"
     },
     {
-      "testo": "^Contratto di servizio tra bnbkit srl e $cliente:denominazione$ in data $data$"
+      "testo": "Altra riga Colore\nContratto di servizio tra bnbkit srl e $cliente:denominazione$ in data $data$"
     },
     {
-      "testo": "<|fontId: default|>Il presente contratto (di seguito, \"Contratto\") regola i **termini** e le **condizioni** tra $fornitore:denominazione$, codice fiscale $fornitore:codiceFiscale$, con sede in $fornitore:indirizzoCompleto$, e $cliente:denominazione$, **codice fiscale** $cliente:codiceFiscale$, con sede in $cliente:indirizzoCompleto$, per la fornitura e gestione di kit di biancheria da lavanderie industriali."
+      "testo": "<|fontId: montserrat|>Il presente contratto (di seguito, \"Contratto\") regola i **termini** e le **condizioni** tra $fornitore:denominazione$, codice fiscale $fornitore:codiceFiscale$, con sede in $fornitore:indirizzoCompleto$, e $cliente:denominazione$, **codice fiscale** $cliente:codiceFiscale$, con sede in $cliente:indirizzoCompleto$, per la fornitura e gestione di kit di biancheria da lavanderie industriali."
     },
     {
-      "testo": "^Omnis illo molestiae ut et amet **blanditiis** amet. Ea voluptas est nostrum saepe corrupti. Incidunt nobis quos voluptatem laboriosam excepturi sed. Deserunt exercitationem praesentium quasi. Ab blanditiis vero sit eveniet. Accusamus quae explicabo rerum rem corrupti placeat similique voluptatem. Non assumenda at voluptas deleniti ipsum numquam accusantium. Laudantium eum ut possimus ullam perferendis nemo. Facere distinctio earum quia. Unde rerum qui dolorum. Repellat esse veniam voluptatum dolores placeat et. Autem et labore provident non. Nihil dolore exercitationem vel hic dolorem voluptatem. Rerum quae natus quia consectetur eaque natus veritatis consequatur. Corporis magnam suscipit nihil autem natus. Quia libero et hic ipsam praesentium omnis aut esse.^"
-    },
-    {
-      "testo": "^Box della denominazione del cliente $cliente:denominazione$^"
+      "testo": "^Box della denominazione del cliente $clienteNome$^"
     },
     {
       "immagine": {
