@@ -59,11 +59,14 @@ function loadImageAsBase64(imagePath) {
     });
 }
 var DocumentGenerator = /** @class */ (function () {
+    //#endregion
     function DocumentGenerator(configPath) {
         this.configPath = configPath;
         this.curX = 0;
         this.curY = 0;
         this.configLoaded = false;
+        //#region flag Debug
+        this.debugActive = false;
     }
     DocumentGenerator.prototype.setConfig = function (config) {
         this.config = config.impostazioniPagina;
@@ -83,8 +86,10 @@ var DocumentGenerator = /** @class */ (function () {
                 this.curY = this.config.margini.alto;
                 this.curX = this.config.margini.sx;
             }
-            else
-                throw new Error("".concat(yPosition, " is not a valid position"));
+            else {
+                this.debugCursor();
+                throw new Error("".concat(yPosition, " is not a valid position for y coordinate"));
+            }
         },
         enumerable: false,
         configurable: true
@@ -101,12 +106,44 @@ var DocumentGenerator = /** @class */ (function () {
                 this.yCursor = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4;
                 this.curX = this.config.margini.sx;
             }
-            else
-                throw new Error("".concat(xPosition, " is not a valid position"));
+            else {
+                throw new Error("".concat(xPosition, " is not a valid position for x coordinate"));
+            }
         },
         enumerable: false,
         configurable: true
     });
+    //#endregion
+    //#region debug
+    DocumentGenerator.prototype.debugCursor = function (inputColor) {
+        if (this.debugActive) {
+            var color = this.doc.getDrawColor();
+            if (inputColor)
+                this.doc.setDrawColor(inputColor);
+            else
+                this.doc.setDrawColor('green');
+            this.doc.line(this.curX - 2, this.curY, this.curX + 2, this.curY);
+            this.doc.line(this.curX, this.curY - 2, this.curX, this.curY + 2);
+            this.doc.setDrawColor(color);
+        }
+    };
+    DocumentGenerator.prototype.debugMargini = function () {
+        if (this.debugActive) {
+            /// debug
+            console.log("debug: righe margini");
+            var color = this.doc.getDrawColor();
+            this.doc.setDrawColor("green");
+            //hzo alto
+            this.doc.line(this.config.margini.sx, this.config.margini.alto, this.doc.internal.pageSize.getWidth() - this.config.margini.dx, this.config.margini.alto);
+            // vert sx
+            this.doc.line(this.config.margini.sx, this.config.margini.alto, this.config.margini.sx, this.doc.internal.pageSize.getHeight() - this.config.margini.basso);
+            // vert dx
+            this.doc.line(this.doc.internal.pageSize.getWidth() - this.config.margini.dx, this.config.margini.alto, this.doc.internal.pageSize.getWidth() - this.config.margini.dx, this.doc.internal.pageSize.getHeight() - this.config.margini.basso);
+            // hzo basso
+            this.doc.line(this.config.margini.sx, this.doc.internal.pageSize.getHeight() - this.config.margini.basso, this.doc.internal.pageSize.getWidth() - this.config.margini.dx, this.doc.internal.pageSize.getHeight() - this.config.margini.basso);
+            this.doc.setDrawColor(color);
+        }
+    };
     //#endregion
     /**
      * # applyTemplate
@@ -116,6 +153,7 @@ var DocumentGenerator = /** @class */ (function () {
      * @param dynamicFields
      * @returns
      */
+    //#region applyTemplate
     DocumentGenerator.prototype.applyTemplate = function (template, dynamicFields) {
         if (!dynamicFields)
             return template;
@@ -123,11 +161,15 @@ var DocumentGenerator = /** @class */ (function () {
             return dynamicFields[key] !== undefined ? dynamicFields[key] : match;
         });
     };
+    //#endregion
+    //#region applyPartiPlaceholders
     DocumentGenerator.prototype.applyPartiPlaceholders = function (text, parti) {
         return text.replace(/\$(fornitore|cliente):(\w+)\$/g, function (match, party, field) {
             return (parti[party] && parti[party][field]) ? parti[party][field] : match;
         });
     };
+    //#endregion
+    //#region loadConfig
     DocumentGenerator.prototype.loadConfig = function () {
         return __awaiter(this, void 0, void 0, function () {
             var data, error_1;
@@ -157,6 +199,7 @@ var DocumentGenerator = /** @class */ (function () {
             });
         });
     };
+    //#endregion
     //#region initDoc
     /**
      * # initDoc
@@ -165,11 +208,11 @@ var DocumentGenerator = /** @class */ (function () {
      */
     DocumentGenerator.prototype.initDoc = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var margins, fontList, _i, _a, font, color, error_2;
+            var margins, fontList, _i, _a, font, styles, paths, i, error_2;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        _b.trys.push([0, 5, , 6]);
+                        _b.trys.push([0, 8, , 9]);
                         this.doc = new jspdf_1.jsPDF();
                         margins = this.template.impostazioniPagina.margini;
                         this.curX = margins.sx;
@@ -178,40 +221,38 @@ var DocumentGenerator = /** @class */ (function () {
                         _i = 0, _a = this.config.fonts;
                         _b.label = 1;
                     case 1:
-                        if (!(_i < _a.length)) return [3 /*break*/, 4];
+                        if (!(_i < _a.length)) return [3 /*break*/, 7];
                         font = _a[_i];
-                        if (!!fontList[font.nome]) return [3 /*break*/, 3];
-                        console.log("Installing font ", font.nome);
-                        if (!font.installPath) return [3 /*break*/, 3];
-                        console.log("Path ", font.installPath);
-                        return [4 /*yield*/, this.installFont(font.installPath, font.nome, font.style ? font.style : undefined)];
+                        if (!!fontList[font.nome]) return [3 /*break*/, 6];
+                        console.log("Installing font ", font.nome, " id: ", font.id);
+                        if (!font.installPath) return [3 /*break*/, 6];
+                        styles = font.style.split(',');
+                        paths = font.installPath.split(',');
+                        i = 0;
+                        _b.label = 2;
                     case 2:
-                        _b.sent();
-                        _b.label = 3;
+                        if (!(i < styles.length)) return [3 /*break*/, 5];
+                        return [4 /*yield*/, this.installFont(paths[i].trim(), font.nome, styles[i].trim())];
                     case 3:
+                        _b.sent();
+                        _b.label = 4;
+                    case 4:
+                        i++;
+                        return [3 /*break*/, 2];
+                    case 5:
+                        console.log("Path ", font.installPath);
+                        _b.label = 6;
+                    case 6:
                         _i++;
                         return [3 /*break*/, 1];
-                    case 4:
+                    case 7:
                         console.log("updated font list ", this.doc.getFontList());
-                        /// debug
-                        console.log("debug: righe margini");
-                        color = this.doc.getDrawColor();
-                        this.doc.setDrawColor("green");
-                        //hzo alto
-                        this.doc.line(this.config.margini.sx, this.config.margini.alto, this.doc.internal.pageSize.getWidth() - this.config.margini.dx, this.config.margini.alto);
-                        // vert sx
-                        this.doc.line(this.config.margini.sx, this.config.margini.alto, this.config.margini.sx, this.doc.internal.pageSize.getHeight() - this.config.margini.basso);
-                        // vert dx
-                        this.doc.line(this.doc.internal.pageSize.getWidth() - this.config.margini.dx, this.config.margini.alto, this.doc.internal.pageSize.getWidth() - this.config.margini.dx, this.doc.internal.pageSize.getHeight() - this.config.margini.basso);
-                        // hzo basso
-                        this.doc.line(this.config.margini.sx, this.doc.internal.pageSize.getHeight() - this.config.margini.basso, this.doc.internal.pageSize.getWidth() - this.config.margini.dx, this.doc.internal.pageSize.getHeight() - this.config.margini.basso);
-                        this.doc.setDrawColor(color);
-                        return [3 /*break*/, 6];
-                    case 5:
+                        return [3 /*break*/, 9];
+                    case 8:
                         error_2 = _b.sent();
                         console.error(error_2);
                         throw error_2;
-                    case 6: return [2 /*return*/];
+                    case 9: return [2 /*return*/];
                 }
             });
         });
@@ -239,176 +280,19 @@ var DocumentGenerator = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         absolutePath = path.resolve(fontPath);
+                        console.log("Installing font ".concat(fontName, " from ").concat(absolutePath));
                         return [4 /*yield*/, fs_1.promises.readFile(absolutePath)];
                     case 1:
                         buffer = _a.sent();
                         base64Font = buffer.toString('base64');
-                        // console.log(`Installing font ${fontName} from ${absolutePath}`);
+                        console.log("this.doc.addFileToVFS ".concat(fontName, ".ttf"), "base64Font");
                         this.doc.addFileToVFS("".concat(fontName, ".ttf"), base64Font);
                         this.doc.addFont("".concat(fontName, ".ttf"), fontName, style);
-                        // this.doc.addFont(`${fontName}.ttf`, fontName, 'bold');
-                        // this.doc.addFont(`${fontName}.ttf`, fontName, 'italic');
                         this.doc.setFont(fontName);
                         return [2 /*return*/];
                 }
             });
         });
-    };
-    // // Writes wrapped text, handling inline bold segments.
-    // private async writeWrappedTextCore(
-    // 	font: DocumentFont,
-    // 	fontSize: number,
-    // 	color: string,
-    // 	text: string,
-    // 	x: number,
-    // 	y: number,
-    // 	maxWidth: number,
-    // 	lineSpacingFactor: number = 1.15
-    // ): Promise<number> {
-    // 	this.doc.setFont(font.nome);
-    // 	this.doc.setFontSize(fontSize);
-    // 	this.doc.setTextColor(color);
-    // 	const lines = this.doc.splitTextToSize(text, maxWidth);
-    // 	const lineHeight = (fontSize * lineSpacingFactor / 72) * 25.4;
-    // 	for (const line of lines) {
-    // 		if (y + lineHeight > (this.doc.internal.pageSize.getHeight() - this.config.margini.basso)) {
-    // 			this.doc.addPage();
-    // 			y = this.config.margini.alto;
-    // 		}
-    // 		// If the line contains inline bold markers, process them.
-    // 		if (line.includes("**")) {
-    // 			y = await this.writeLineWithInlineBold(line, x, y, font, fontSize, color, maxWidth, lineSpacingFactor);
-    // 		} else {
-    // 			this.doc.text(line, x, y);
-    // 			y += lineHeight;
-    // 		}
-    // 	}
-    // 	return y;
-    // }
-    // Writes a single line with inline bold processing.
-    // private async writeLineWithInlineBold(
-    // 	line: string,
-    // 	x: number,
-    // 	y: number,
-    // 	normalFont: DocumentFont,
-    // 	fontSize: number,
-    // 	color: string,
-    // 	maxWidth: number,
-    // 	lineSpacingFactor: number = 1.15
-    // ): Promise<number> {
-    // 	let currentX = x;
-    // 	// Split the line by bold segments. The regex splits by bold markers.
-    // 	const segments = line.split(/(\*\*.*?\*\*)/g);
-    // 	const lineHeight = (fontSize * lineSpacingFactor / 72) * 25.4;
-    // 	for (const seg of segments) {
-    // 		// Skip empty segments
-    // 		if (!seg) continue;
-    // 		let segText = seg;
-    // 		let useBold = false;
-    // 		// Check if this segment is bold (wrapped in **)
-    // 		if (seg.startsWith("**") && seg.endsWith("**")) {
-    // 			useBold = true;
-    // 			segText = seg.substring(2, seg.length - 2);
-    // 		}
-    // 		// Set the appropriate font
-    // 		if (useBold && normalFont.boldFont) {
-    // 			this.doc.setFont(normalFont.boldFont.nome, 'bold');
-    // 		} else {
-    // 			this.doc.setFont(normalFont.nome);
-    // 		}
-    // 		this.doc.setFontSize(fontSize);
-    // 		this.doc.setTextColor(color);
-    // 		// Skip rendering if segment is empty after processing
-    // 		if (!segText.trim()) continue;
-    // 		const segWidth = this.doc.getTextWidth(segText);
-    // 		// Check if we need to wrap to the next line
-    // 		if (currentX + segWidth > x + maxWidth) {
-    // 			y += lineHeight;
-    // 			currentX = x;
-    // 		}
-    // 		// Write segment
-    // 		this.doc.text(segText, currentX, y);
-    // 		currentX += segWidth;
-    // 	}
-    // 	return y + lineHeight;
-    // }
-    // private async writeWrappedTextWithFont(
-    // 	fontConf: DocumentFont,
-    // 	text: string,
-    // 	x: number,
-    // 	y: number,
-    // 	maxWidth: number,
-    // 	lineSpacingFactor: number = 1.15
-    // ): Promise<void> {
-    // 	const fontList = this.doc.getFontList();
-    // 	if (!fontList[fontConf.nome]) {
-    // 		if (fontConf.installPath) await this.installFont(fontConf.installPath, fontConf.nome);
-    // 		else throw new Error("Font not present and no installPath provided");
-    // 	} else {
-    // 		this.doc.setFont(fontConf.nome);
-    // 	}
-    // 	this.curY = await this.writeWrappedTextCore(fontConf, fontConf.dimensione, fontConf.colore, text, x, y, maxWidth, lineSpacingFactor);
-    // }
-    // public async writeBoxedText(
-    // 	text: string,
-    // 	fontConf: DocumentFont,
-    // 	padding: number = 5,
-    // 	borderRadius: number = 5,
-    // 	borderWidth: number = 1,
-    // 	boxColor?: string
-    // ): Promise<void> {
-    // 	const fontList = this.doc.getFontList();
-    // 	if (!fontList[fontConf.nome]) {
-    // 		if (fontConf.installPath) await this.installFont(fontConf.installPath, fontConf.nome);
-    // 		else throw new Error("Font not present and no installPath provided");
-    // 	} else {
-    // 		this.doc.setFont(fontConf.nome);
-    // 	}
-    // 	this.doc.setFontSize(fontConf.dimensione);
-    // 	this.doc.setTextColor(fontConf.colore);
-    // 	const pageWidth = this.doc.internal.pageSize.getWidth();
-    // 	const maxTextWidth = pageWidth - this.config.margini.sx - this.config.margini.dx - 2 * padding;
-    // 	const lines = this.doc.splitTextToSize(text, maxTextWidth);
-    // 	const lineHeight = (fontConf.dimensione * 1.15 / 72) * 25.4;
-    // 	const textHeight = lines.length * lineHeight;
-    // 	const boxX = this.curX;
-    // 	const boxY = this.curY;
-    // 	const boxWidth = maxTextWidth + 2 * padding;
-    // 	const boxHeight = textHeight + 2 * padding;
-    // 	if (boxColor) {
-    // 		this.doc.setFillColor(boxColor);
-    // 		this.doc.roundedRect(boxX, boxY, boxWidth, boxHeight, borderRadius, borderRadius, "F");
-    // 	}
-    // 	this.doc.setLineWidth(borderWidth);
-    // 	this.doc.roundedRect(boxX, boxY, boxWidth, boxHeight, borderRadius, borderRadius);
-    // 	const textX = boxX + padding;
-    // 	let textY = boxY + padding + lineHeight;
-    // 	for (const line of lines) {
-    // 		if (line.includes("**")) {
-    // 			textY = await this.writeLineWithInlineBold(line, textX, textY, fontConf, fontConf.dimensione, fontConf.colore, maxTextWidth, 1.15);
-    // 		} else {
-    // 			this.doc.text(line, textX, textY);
-    // 			textY += lineHeight;
-    // 		}
-    // 	}
-    // 	this.curY = boxY + boxHeight + this.config.staccoriga;
-    // }
-    // Checks if text is wrapped in '^' markers for boxed text.
-    DocumentGenerator.prototype.isBoxedText = function (text) {
-        return text.startsWith('^') && text.endsWith('^');
-    };
-    // Removes '^' markers.
-    DocumentGenerator.prototype.stripBoxMarkers = function (text) {
-        return text.substring(1, text.length - 1);
-    };
-    // Checks if text is entirely wrapped in '**' markers (not inline).
-    // (This function is kept for backward compatibility.)
-    DocumentGenerator.prototype.isBoldText = function (text) {
-        return text.startsWith('**') && text.endsWith('**');
-    };
-    // Removes '**' markers.
-    DocumentGenerator.prototype.stripBoldMarkers = function (text) {
-        return text.substring(2, text.length - 2);
     };
     // // Inserts images using the current cursor position.
     // private async insertLogo(): Promise<void> {
@@ -428,14 +312,16 @@ var DocumentGenerator = /** @class */ (function () {
     // 		}
     // 	}
     // }
+    //#region insertImage
     // Inserts images using the current cursor position.
     DocumentGenerator.prototype.insertImage = function (imgParam) {
         return __awaiter(this, void 0, void 0, function () {
-            var startX, format, base64Image, startY;
+            var startX, format, base64Image, startY, error_3;
             var _a;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
+                        _b.trys.push([0, 2, , 3]);
                         startX = this.curX;
                         format = ((_a = imgParam.path.split('.').pop()) === null || _a === void 0 ? void 0 : _a.toUpperCase()) || 'PNG';
                         return [4 /*yield*/, loadImageAsBase64(imgParam.path)];
@@ -446,14 +332,21 @@ var DocumentGenerator = /** @class */ (function () {
                             this.doc.addPage();
                             this.curY = this.config.margini.alto;
                         }
+                        console.log("base 64 image: ", base64Image);
                         this.doc.addImage(base64Image, format, startX, this.curY, imgParam.dimensioni[0], imgParam.dimensioni[1]);
                         console.log("Image inserted at X: ".concat(startX, ", Y: ").concat(this.curY));
                         this.curY = this.curY + imgParam.dimensioni[1] + this.config.staccoriga;
-                        return [2 /*return*/];
+                        return [3 /*break*/, 3];
+                    case 2:
+                        error_3 = _b.sent();
+                        console.error(error_3);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
                 }
             });
         });
     };
+    //#endregion
     /**
      * # parseText
      * trova i tag di formattazine, li rimuove dal testo e ritorna un oggetto con le impostazioni
@@ -540,91 +433,125 @@ var DocumentGenerator = /** @class */ (function () {
     //#endregion
     //#region drawBox
     DocumentGenerator.prototype.drawBox = function (text, maxWidth, option) {
-        console.log("################ BBBBOOOOXXXXX ", text, "\ntext option: ", option);
         this.doc.setDrawColor(this.config.box.lineColor);
         this.doc.setLineWidth(this.config.box.lineWidth);
         this.doc.setFillColor(this.config.box.background);
-        var tArr = this.doc.splitTextToSize(text, maxWidth);
         var _a = [
             this.curX,
             this.curY,
-            maxWidth,
-            tArr.length * (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4,
+            maxWidth + this.config.box.padding,
+            0,
             this.config.box.raggio
         ], x = _a[0], y = _a[1], w = _a[2], h = _a[3], r = _a[4];
-        x -= this.config.box.padding * .5;
-        w += this.config.box.padding;
-        h += this.config.box.padding;
+        var section = this.parseBoldSections(text);
+        // writeSection
+        var endCur = { x: 0, y: 0 };
+        for (var _i = 0, section_1 = section; _i < section_1.length; _i++) {
+            var s = section_1[_i];
+            var text_1 = s.text.replace(/\*\*/g, '');
+            this.doc.setFont(this.doc.getFont().fontName, s.type);
+            endCur = this.writeTextInLine(text_1, maxWidth, option);
+        }
         if (!option.baseline || option.baseline === 'alphabetic') {
             y -= this.doc.getFontSize() * this.config.interlinea / 72 * 25.4;
         }
         else if (option.baseline === 'middle') {
             y -= (this.doc.getFontSize() * this.config.interlinea / 72 * 25.4) * 0.5;
         }
+        x -= this.config.box.padding * .5;
+        h = this.config.box.padding + (endCur.y - y);
         this.doc.roundedRect(x, y, w, h, r, r);
+        this.yCursor = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72 * 25.4);
     };
     //#endregion
     //#region generateDocument
     DocumentGenerator.prototype.generateDocument = function (params) {
         return __awaiter(this, void 0, void 0, function () {
-            var dynamicFields, dynamicElements, pageWidth, maxWidth, _i, _a, c, _b, _c, key, write, textToWrite, option, boxedText, section, _d, section_1, s, text;
-            return __generator(this, function (_e) {
-                switch (_e.label) {
+            var dynamicFields, dynamicElements, pageWidth, maxWidth, _i, _a, c, _b, _c, key, _d, write, textToWrite, option, boxedText, section, _e, section_2, s, text, imgParam;
+            return __generator(this, function (_f) {
+                switch (_f.label) {
                     case 0: return [4 /*yield*/, this.loadConfig()];
                     case 1:
-                        _e.sent(); // read the config json file  
+                        _f.sent(); // read the config json file  
                         return [4 /*yield*/, this.initDoc()];
                     case 2:
-                        _e.sent(); // prepares the doc obj and the cursor
+                        _f.sent(); // prepares the doc obj and the cursor
                         dynamicFields = params.dynamicFields || {};
                         dynamicElements = params.dynamicElements || {};
                         pageWidth = this.doc.internal.pageSize.getWidth();
                         maxWidth = pageWidth - (this.config.margini.sx + this.config.margini.dx);
-                        // Parse contents
-                        for (_i = 0, _a = this.contenuti; _i < _a.length; _i++) {
-                            c = _a[_i];
-                            for (_b = 0, _c = Object.keys(c); _b < _c.length; _b++) {
-                                key = _c[_b];
-                                switch (key) {
-                                    case 'testo':
-                                        write = this.parseText(c[key]);
-                                        textToWrite = this.applyTemplate(write.content, dynamicFields);
-                                        textToWrite = this.applyPartiPlaceholders(textToWrite, params.parti);
-                                        this.setupText(write.fontId);
-                                        option = {
-                                            align: write.hAlign ? write.hAlign : null,
-                                            // baseline: 'middle'
-                                            // baseline: write.vAlign ? write.vAlign : null
-                                        };
-                                        boxedText = textToWrite.match(/^\^.*\^$/);
-                                        if (boxedText) {
-                                            this.drawBox(boxedText['input'], maxWidth, option);
-                                            textToWrite = textToWrite.replace(/\^/g, '');
-                                        }
-                                        section = this.parseBoldSections(textToWrite);
-                                        // writeSection
-                                        for (_d = 0, section_1 = section; _d < section_1.length; _d++) {
-                                            s = section_1[_d];
-                                            text = s.text.replace(/\*\*/g, '');
-                                            this.doc.setFont(this.doc.getFont().fontName, s.type);
-                                            this.writeTextInLine(text, maxWidth, option);
-                                        }
-                                        // this.yCursor = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4;
-                                        this.xCursor = this.config.margini.sx;
-                                        this.yCursor = this.curY + this.config.staccoriga;
-                                        break;
-                                    case 'Punti':
-                                        break;
-                                    case 'immagini':
-                                        break;
-                                    case 'tabella':
-                                        break;
-                                    default:
-                                        break;
-                                }
+                        _i = 0, _a = this.contenuti;
+                        _f.label = 3;
+                    case 3:
+                        if (!(_i < _a.length)) return [3 /*break*/, 13];
+                        c = _a[_i];
+                        _b = 0, _c = Object.keys(c);
+                        _f.label = 4;
+                    case 4:
+                        if (!(_b < _c.length)) return [3 /*break*/, 12];
+                        key = _c[_b];
+                        _d = key;
+                        switch (_d) {
+                            case 'testo': return [3 /*break*/, 5];
+                            case 'Punti': return [3 /*break*/, 6];
+                            case 'immagine': return [3 /*break*/, 7];
+                            case 'tabella': return [3 /*break*/, 9];
+                        }
+                        return [3 /*break*/, 10];
+                    case 5:
+                        write = this.parseText(c[key]);
+                        textToWrite = this.applyTemplate(write.content, dynamicFields);
+                        textToWrite = this.applyPartiPlaceholders(textToWrite, params.parti);
+                        this.setupText(write.fontId);
+                        option = {
+                            align: write.hAlign ? write.hAlign : null,
+                            // baseline: 'middle'
+                            // baseline: write.vAlign ? write.vAlign : null
+                        };
+                        boxedText = textToWrite.match(/^\^.*\^$/);
+                        if (boxedText) {
+                            this.debugCursor();
+                            textToWrite = textToWrite.replace(/\^/g, '');
+                            this.drawBox(textToWrite, maxWidth, option);
+                            this.curX = this.config.margini.sx;
+                        }
+                        else {
+                            section = this.parseBoldSections(textToWrite);
+                            // writeSection
+                            for (_e = 0, section_2 = section; _e < section_2.length; _e++) {
+                                s = section_2[_e];
+                                text = s.text.replace(/\*\*/g, '');
+                                this.doc.setFont(this.doc.getFont().fontName, s.type);
+                                this.debugCursor();
+                                this.writeTextInLine(text, maxWidth, option);
                             }
                         }
-                        this.doc.save("test.pdf");
+                        this.curX = this.config.margini.sx;
+                        this.yCursor = this.curY + this.config.staccoriga;
+                        return [3 /*break*/, 11];
+                    case 6: return [3 /*break*/, 11];
+                    case 7:
+                        console.log("Image insert: ", c[key]);
+                        imgParam = c[key];
+                        return [4 /*yield*/, this.insertImage(imgParam)];
+                    case 8:
+                        _f.sent();
+                        // let img = new Image(imgParam.dimensioni[0], imgParam.dimensioni[1]);
+                        // img.src = await loadImageAsBase64(imgParam.path);
+                        // this.doc.addImage(img, 'PNG', 15, 15, imgParam.dimensioni[0], imgParam.dimensioni[1]);
+                        // this.curX = this.config.margini.sx;
+                        // this.curY = imgParam.dimensioni[1] + this.config.staccoriga;
+                        return [3 /*break*/, 11];
+                    case 9: return [3 /*break*/, 11];
+                    case 10: return [3 /*break*/, 11];
+                    case 11:
+                        _b++;
+                        return [3 /*break*/, 4];
+                    case 12:
+                        _i++;
+                        return [3 /*break*/, 3];
+                    case 13:
+                        this.doc.save("test_image0.pdf");
                         return [2 /*return*/];
                 }
             });
@@ -635,63 +562,24 @@ var DocumentGenerator = /** @class */ (function () {
     DocumentGenerator.prototype.writeTextInLine = function (text, maxWidth, option) {
         var words = text.split(" ");
         var spaceWidth = this.doc.getTextWidth(" "); // Larghezza dello spazio
-        var lineWidth = 0; // Larghezza della linea corrente
+        var lineWidth = this.curX; // Larghezza disponibile corrente
         for (var _i = 0, words_1 = words; _i < words_1.length; _i++) {
             var word = words_1[_i];
             var wordWidth = this.doc.getTextWidth(word);
             // Se la parola non entra nella riga, fai il ritorno a capo
-            if (lineWidth + wordWidth >= maxWidth * 0.95) {
+            if (lineWidth + wordWidth >= maxWidth) {
                 this.curX = this.config.margini.sx; // Reset X
                 this.yCursor = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4; // Vai a capo
-                lineWidth = 0; // Reset della larghezza linea
+                lineWidth = this.curX; // Reset della larghezza linea
             }
             // Scrivi la parola
             if (word !== '') {
                 this.doc.text(word, this.curX, this.curY, option);
-                this.xCursor = this.curX + wordWidth + spaceWidth; // Aggiorna X per la parola successiva
+                this.curX += wordWidth + spaceWidth; // Aggiorna X per la parola successiva
                 lineWidth += wordWidth + spaceWidth; // Aggiorna la larghezza della riga
             }
         }
-    };
-    //#endregion
-    //#region writeBold
-    DocumentGenerator.prototype.writeBold = function (text, option) {
-        try {
-            var actFont = this.doc.getFont();
-            console.log("writing bold text: ".concat(text, " font: ").concat(actFont.fontName));
-            this.doc.setFont(actFont.fontName, 'bold');
-            this.doc.text(text, this.curX, this.curY, option);
-            // re-set original font
-            this.doc.setFont(actFont.fontName, actFont.fontStyle);
-        }
-        catch (error) {
-            throw new Error("Error writing text bold: ".concat(error));
-        }
-    };
-    //#endregion
-    //#region writeNormal
-    DocumentGenerator.prototype.writeNormal = function (text, option) {
-        try {
-            var actFont = this.doc.getFont();
-            console.log("writing normal text ".concat(text, ", font: ").concat(actFont.fontName));
-            text = text.replace(/\*\*|\^/g, '');
-            this.doc.text(text, this.curX, this.curY, option);
-        }
-        catch (error) {
-            throw new Error("Error writing text normal: ".concat(error));
-        }
-    };
-    //#endregion
-    //#region writeBoxedText
-    DocumentGenerator.prototype.writeBoxedText = function (text_1) {
-        return __awaiter(this, arguments, void 0, function (text, padding, borderRadius, borderWidth, boxColor) {
-            if (padding === void 0) { padding = 5; }
-            if (borderRadius === void 0) { borderRadius = 5; }
-            if (borderWidth === void 0) { borderWidth = 1; }
-            return __generator(this, function (_a) {
-                return [2 /*return*/];
-            });
-        });
+        return { x: Number(this.curX), y: Number(this.curY) };
     };
     return DocumentGenerator;
 }());
