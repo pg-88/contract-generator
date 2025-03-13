@@ -43,7 +43,7 @@ function testDocumentGenerator() {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    generator = new ContractGenerator_1.DocumentGenerator('test.json');
+                    generator = new ContractGenerator_1.DocumentGenerator('testElencoContent.json');
                     params = {
                         parti: {
                             fornitore: {

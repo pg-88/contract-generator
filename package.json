@@ -7,7 +7,8 @@
   "scripts": {
     "release": "standard-version",
     "test": "cd tests/contract && node test.js",
-    "clean": "powershell -Command \"Remove-Item -Force -Recurse \"dist/*\", \"ContractGenerator.js\", \"tests\\contract\\*.pdf\" -ErrorAction SilentlyContinue\"",
+    "clean": "powershell -Command \"Remove-Item -Force -Recurse \"dist/*\", \"ContractGenerator.js\" -ErrorAction SilentlyContinue\"",
+    "cleanTest": "powershell -Command \"Remove-Item -Force -Recurse \"dist/*\", \"ContractGenerator.js\", \"tests\\contract\\*.pdf\" -ErrorAction SilentlyContinue\"",
     "build": "npm run clean && tsc ContractGenerator.ts && tsc",
     "prepublishOnly": "npm run build"
   },

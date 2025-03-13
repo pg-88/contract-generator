@@ -1,15 +1,18 @@
-# Contract Generator
+<# Contract Generator
 
-- [Contract Generator](#contract-generator)
-  - [To - Do](#to---do)
-  - [Descrizione](#descrizione)
-  - [Funzionamento](#funzionamento)
-    - [Struttura per il template `.json`](#struttura-per-il-template-json)
-      - [Sezioni File](#sezioni-file)
-        - [versione](#versione)
-        - [impostazioni pagina](#impostazioni-pagina)
-      - [Esempio file](#esempio-file)
-      - [Sintassi per formattazione](#sintassi-per-formattazione)
+- [To - Do](#to---do)
+- [Descrizione](#descrizione)
+- [Funzionamento](#funzionamento)
+  - [Deinizione dei **font**](#deinizione-dei-font)
+  - [Inserimento immagini](#inserimento-immagini)
+  - [Elenchi](#elenchi)
+  - [Struttura per il template `.json`](#struttura-per-il-template-json)
+    - [Sezioni File](#sezioni-file)
+      - [versione](#versione)
+      - [impostazioni pagina](#impostazioni-pagina)
+      - [contenuti](#contenuti)
+    - [Esempio file](#esempio-file)
+    - [Sintassi per formattazione](#sintassi-per-formattazione)
 
 ## To - Do 
 - [ ] Lista di font nel .json e all'init delle config installarli tutti
@@ -19,7 +22,49 @@
 
 ## Descrizione
 
-## Funzionamento 
+## Funzionamento
+
+### Deinizione dei **font**
+
+Possiamo predisporre 
+font disponibili di default: 
+- helvetica: [ 'normal', 'bold', 'italic', 'bolditalic' ],
+- Helvetica: [ '', 'Bold', 'Oblique', 'BoldOblique' ],
+- courier: [ 'normal', 'bold', 'italic', 'bolditalic' ],
+- Courier: [ '', 'Bold', 'Oblique', 'BoldOblique' ],
+- times: [ 'normal', 'bold', 'italic', 'bolditalic' ],
+- Times: [ 'Roman', 'Bold', 'Italic', 'BoldItalic' ],
+- zapfdingbats: [ 'normal' ],
+- ZapfDingbats: [ '' ],
+- symbol: [ 'normal' ],
+- Symbol: [ '' ],
+
+### Inserimento immagini
+Per inserire un'immagine occore inserire, nella sezione contenuti file `json` un elemento `immagine` che conterrà i seguenti campi: 
+````json
+"immagine": {
+        "path": "./logo-contratto.png",
+        "posizione": [
+          180,
+          100
+        ],
+        "dimensioni": [
+          40,
+          10
+        ],
+        "coeffDim": 0.042
+      }
+````
+- `path` percorso nel sistema del file immagine
+- `posizione` posizione relativa al cursore, il primo elemento per il posizionamento orizzontale, il secondo per quello verticale (crescente verso il basso). Essendo tutta la stesura del documento pensata in modo sequenziale, gli elementi vengono inseriti nel pdf seguendo l'ordine in cui sono stati definiti nel `json`, la posizione per l'immagine serve per dare un offset rispetto alla posizione attuale per permettere di correggere la posizione. **Attenzione** questo sistema non controlla la sovrapposizone degli elementi, è quindi consigliabile testare la creazione del documento ad ogni modifica.
+- `dimensioni` larghezza, altezza. Il campo è obbligatorio e permette qualsiasi valore, non mantiene quindi le proporzioni originali dell'immagine
+- `coeffDim` *NON IMPLEMENTATO*
+
+### Elenchi 
+- • `Alt` + 7 tastierino
+- ○ `Alt` + 9 tastierino
+- ► `Alt` + 16 tastierino
+- → `Alt` + 26 tastierino
 
 ### Struttura per il template `.json`
 
@@ -29,6 +74,11 @@
 numero della versione del documento serve in produzione per avere traccia di eventuali modifiche nel tempo. (*non viene mostrato nel documento finale*)
 ##### impostazioni pagina
 
+##### contenuti
+i tipi di contenuto possono essere: 
+- `testo`:
+- `immagine` vedi dettagli di funzionamento alla sezione [inserimento immagini](#inserimento-immagini)
+- `Punti`
 #### Esempio file 
 
 ````json

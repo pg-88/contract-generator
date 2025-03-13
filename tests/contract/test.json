@@ -18,11 +18,11 @@
       },
       {
         "id": "bellaDaDio",
-        "nome": "MontserratBold",
+        "nome": "Montserrat",
         "dimensione": 17,
         "colore": "#990000",
-        "style": "bold",
-        "installPath": "./Montserrat-Bold.ttf"
+        "style": "bold, normal",
+        "installPath": "./Montserrat-Bold.ttf, ./Montserrat-Regular.ttf"
       },
       {
         "id": "montserrat",
@@ -52,10 +52,24 @@
   },
   "contenuti": [
     {
+      "immagine": {
+        "path": "./logo-contratto.png",
+        "posizione": [
+          180,
+          100
+        ],
+        "dimensioni": [
+          40,
+          10
+        ],
+        "coeffDim": 0.042
+      }
+    },
+    {
       "testo": "Contratto di servizio tra **bnbkit srl** e $cliente:denominazione$"
     },
     {
-      "testo": "^Contratto di servizio tra bnbkit srl e $cliente:denominazione$ in data $data$"
+      "testo": "Contratto di servizio tra bnbkit srl e $cliente:denominazione$ in data $data$"
     },
     {
       "testo": "<|fontId: default|>Il presente contratto (di seguito, \"Contratto\") regola i **termini** e le **condizioni** tra $fornitore:denominazione$, codice fiscale $fornitore:codiceFiscale$, con sede in $fornitore:indirizzoCompleto$, e $cliente:denominazione$, **codice fiscale** $cliente:codiceFiscale$, con sede in $cliente:indirizzoCompleto$, per la fornitura e gestione di kit di biancheria da lavanderie industriali."
@@ -64,18 +78,18 @@
       "testo": "^Omnis illo molestiae ut et amet **blanditiis** amet. Ea voluptas est nostrum saepe corrupti. Incidunt nobis quos voluptatem laboriosam excepturi sed. Deserunt exercitationem praesentium quasi. Ab blanditiis vero sit eveniet. Accusamus quae explicabo rerum rem corrupti placeat similique voluptatem. Non assumenda at voluptas deleniti ipsum numquam accusantium. Laudantium eum ut possimus ullam perferendis nemo. Facere distinctio earum quia. Unde rerum qui dolorum. Repellat esse veniam voluptatum dolores placeat et. Autem et labore provident non. Nihil dolore exercitationem vel hic dolorem voluptatem. Rerum quae natus quia consectetur eaque natus veritatis consequatur. Corporis magnam suscipit nihil autem natus. Quia libero et hic ipsam praesentium omnis aut esse.^"
     },
     {
-      "testo": "^Box della denominazione del cliente $cliente:denominazione$^"
+      "testo": "^Box della **denominazione** del cliente $cliente:denominazione$^"
     },
     {
       "immagine": {
         "path": "./logo-contratto.png",
         "posizione": [
-          100,
+          0,
           100
         ],
         "dimensioni": [
-          52.67,
-          17.81
+          10,
+          10
         ],
         "coeffDim": 0.042
       }

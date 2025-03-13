@@ -71,15 +71,23 @@ interface PageSettings {
 }
 
 interface ImageParams {
-  path: string; posizione: [number, number]; dimensioni?: [number, number]; coeffDim?: number;
+  path: string; posizione?: [number, number]; dimensioni?: [number, number]; coeffDim?: number;
 }
 interface Content {
   // titolo: string;
   // sottotitolo: string;
   testo: string;
-  Punti: Array<{ titolo: string; Sottopunti: Array<{ titolo: string; contenuto: string; }>; }>;
+  Punti: Elenco[];// Array<{ titolo: string; Sottopunti: Array<{ titolo: string; contenuto: string; }>; }>;
   immagini: ImageParams;
 };
+
+interface Elenco {
+  titolo: string;
+  Sottopunti: Array<{
+    titolo: string;
+    contenuto: string[];
+  }>;
+}
 
 interface DocumentConfig {
   versione: string;
@@ -171,6 +179,16 @@ export class DocumentGenerator {
   }
   //#endregion
 
+  get yNewLine() {
+    const newY = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4
+    if (newY > this.doc.internal.pageSize.getHeight() - this.config.margini.basso) {
+      this.doc.addPage();
+      this.curY = this.config.margini.alto;
+      this.curX = this.config.margini.sx;
+
+      return this.curY;
+    } else return newY;
+  }
   //#region debug
   private debugCursor(inputColor?: string) {
     if (this.debugActive) {
@@ -283,20 +301,19 @@ export class DocumentGenerator {
       for (const font of this.config.fonts) {
         // console.log("Font List: ", fontList, " Font selected ", font.nome)
         if (!fontList[font.nome]) {
-          console.log("Installing font ", font.nome, " id: ", font.id);
           if (font.installPath) {
             let styles = font.style.split(',');
             let paths = font.installPath.split(',');
-            for (let i=0; i<styles.length; i++) {
+            for (let i = 0; i < styles.length; i++) {
               await this.installFont(paths[i].trim(), font.nome, styles[i].trim());
             }
-            console.log("Path ", font.installPath);
           }
         }
       }
       console.log("updated font list ", this.doc.getFontList());
 
       //////////////////////////////////////////////////////////////////////////
+      this.debugMargini();
     } catch (error) {
       console.error(error);
       throw error;
@@ -353,20 +370,23 @@ export class DocumentGenerator {
   // Inserts images using the current cursor position.
   private async insertImage(imgParam: ImageParams): Promise<void> {
     try {
-      const startX = this.curX;
-  
+      let startX = this.curX;
+      let startY = this.curY;
+      if (imgParam.posizione) {
+        startX += imgParam.posizione[0];
+        startY += imgParam.posizione[1];
+      }
+
       const format = imgParam.path.split('.').pop()?.toUpperCase() || 'PNG';
       const base64Image = await loadImageAsBase64(imgParam.path);
-      const startY = this.curY;
       if (startY + imgParam.dimensioni[1] > (this.doc.internal.pageSize.getHeight() - this.config.margini.basso)) {
         this.doc.addPage();
         this.curY = this.config.margini.alto;
+        startY = this.curY + imgParam.posizione[1];
       }
-      console.log("base 64 image: ", base64Image);
-      this.doc.addImage(base64Image, format, startX, this.curY, imgParam.dimensioni[0], imgParam.dimensioni[1]);
-      console.log(`Image inserted at X: ${startX}, Y: ${this.curY}`);
-      this.curY = this.curY + imgParam.dimensioni[1] + this.config.staccoriga;
-      
+      this.doc.addImage(base64Image, format, startX, startY, imgParam.dimensioni[0], imgParam.dimensioni[1]);
+      this.curY = startY + imgParam.dimensioni[1] + this.config.staccoriga;
+
     } catch (error) {
       console.error(error);
     }
@@ -381,10 +401,11 @@ export class DocumentGenerator {
    * @returns 
    */
   //#region parseText
-  private parseText(text: string): FormattedText {
+  private parseText(text: string, params: DocumentParams): FormattedText {
     const tagRegex = /<\|(.*?)\|>/g;  // Trova i tag <|...|>
     let content = text.replace(tagRegex, "").trim(); // Rimuove i tag e lascia solo il testo principale
-
+    content = this.applyTemplate(content, params.dynamicFields);
+    content = this.applyPartiPlaceholders(content, params.parti);
     let formattedText: FormattedText = { content };
     // Trova tutti i tag e processali
     const matched = Array.from(text.matchAll(tagRegex));
@@ -393,9 +414,6 @@ export class DocumentGenerator {
       for (const tagContent of tags) {
         if (tagContent.includes(":")) {
           const [key, value] = tagContent.split(":").map(s => s.trim());
-
-          // Mappa i valori nell'oggetto in base alla chiave trovata
-          // console.log("tag formattazione ", key, value);
           switch (key) {
             case "fontId":
               formattedText.fontId = value;
@@ -494,62 +512,112 @@ export class DocumentGenerator {
   }
   //#endregion
 
+  //#region writeTextSection
+  private writeTextSection(origText: string, params: DocumentParams, offsetX?: number, offsetY?: number) {
+    const pageWidth = this.doc.internal.pageSize.getWidth();
+    const maxWidth = pageWidth - (this.config.margini.sx + this.config.margini.dx);
+    let write = this.parseText(origText, params);
+    let textToWrite = write.content;
+    this.setupText(write.fontId);
+    const option: TextOptionsLight = {
+      align: write.hAlign ? write.hAlign : null,
+      baseline: write.vAlign ? write.vAlign : null
+    };
+    let boxedText = textToWrite.match(/^\^.*\^$/)
+    if (boxedText) {
+      this.debugCursor();
+      textToWrite = textToWrite.replace(/\^/g, '');
+      this.drawBox(textToWrite, maxWidth, option);
+      this.curX = this.config.margini.sx;
+    } else {
+      let section = this.parseBoldSections(textToWrite);
+      // writeSection
+      for (const s of section) {
+        let text = s.text.replace(/\*\*/g, '');
+        this.doc.setFont(this.doc.getFont().fontName, s.type);
+        this.debugCursor();
+        this.writeTextInLine(text, maxWidth, option, offsetX, offsetY);
+      }
+    }
+    this.curX = this.config.margini.sx;
+    // this.yCursor = this.curY + this.config.staccoriga;
+  }
+  //#endregion
+
+  //#region writeTextInLine
+  private writeTextInLine(text: string, maxWidth: number, option: TextOptionsLight, offsetX?: number, offsetY?: number): { x: number, y: number } {
+    let words = text.split(" ");
+    if (offsetX && this.curX<offsetX) this.xCursor = offsetX;
+    console.log("testo input: ", text, "testo splittato", words);
+    let spaceWidth = this.doc.getTextWidth(" "); // Larghezza dello spazio
+    let lineWidth = this.curX; // Larghezza disponibile corrente
+
+    for (let word of words) {
+      let wordWidth = this.doc.getTextWidth(word);
+      // Se la parola non entra nella riga, fai il ritorno a capo
+      if (lineWidth + wordWidth >= maxWidth) {
+        this.curX = this.config.margini.sx; // Reset X
+        if (offsetX && this.curX<offsetX) this.xCursor = offsetX;
+        this.yCursor = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4;// Vai a capo
+        lineWidth = this.curX; // Reset della larghezza linea
+      }
+      // Scrivi la parola
+      if (word !== '') {
+        this.doc.text(word, this.curX, this.curY, option);
+        console.log("Scritto la riga ", word);
+        this.curX += wordWidth + spaceWidth; // Aggiorna X per la parola successiva
+        lineWidth += wordWidth + spaceWidth; // Aggiorna la larghezza della riga
+      }
+    }
+    return { x: Number(this.curX), y: Number(this.curY) };
+  }
+  //#endregion
+
+
   //#region generateDocument
   public async generateDocument(params: DocumentParams) {
     await this.loadConfig(); // read the config json file  
     await this.initDoc(); // prepares the doc obj and the cursor
-    const dynamicFields = params.dynamicFields || {};
-    const dynamicElements = params.dynamicElements || {};
-    const pageWidth = this.doc.internal.pageSize.getWidth();
-    const maxWidth = pageWidth - (this.config.margini.sx + this.config.margini.dx);
+    // const dynamicFields = params.dynamicFields || {};
+    // const dynamicElements = params.dynamicElements || {};
+    // const pageWidth = this.doc.internal.pageSize.getWidth();
+    // const maxWidth = pageWidth - (this.config.margini.sx + this.config.margini.dx);
 
     // Parse contents
     for (const c of this.contenuti) {
       for (const key of Object.keys(c)) {
         switch (key) {
           case 'testo':
-            let write = this.parseText(c[key]);
-            let textToWrite = this.applyTemplate(write.content, dynamicFields);
-            textToWrite = this.applyPartiPlaceholders(textToWrite, params.parti);
-
-            this.setupText(write.fontId);
-            const option: TextOptionsLight = {
-              align: write.hAlign ? write.hAlign : null,
-              // baseline: 'middle'
-              // baseline: write.vAlign ? write.vAlign : null
-            };
-            let boxedText = textToWrite.match(/^\^.*\^$/)
-            if (boxedText) {
-              this.debugCursor();
-              textToWrite = textToWrite.replace(/\^/g, '');
-              this.drawBox(textToWrite, maxWidth, option);
-              this.curX = this.config.margini.sx;
-            } else {
-              let section = this.parseBoldSections(textToWrite);
-              // writeSection
-              for (const s of section) {
-                let text = s.text.replace(/\*\*/g, '');
-                this.doc.setFont(this.doc.getFont().fontName, s.type);
-                this.debugCursor();
-                this.writeTextInLine(text, maxWidth, option);
-              }
-            }
-            this.curX = this.config.margini.sx;
+            this.writeTextSection(c[key], params);
             this.yCursor = this.curY + this.config.staccoriga;
-
             break;
           case 'Punti':
+            const punti = c[key] as Elenco[];
+            for (const section of punti) {
+              // console.log("Section Title", section.titolo);
+              this.writeTextSection(section.titolo, params);
+              this.curY += this.config.staccoriga;
+              for (const point of section.Sottopunti) {
+                console.log("Point title:", point.titolo, " point content: ", point.contenuto);
+                // this.curX = this.config.margini.sx + this.config.rientro;
+                const offset = this.config.margini.sx + this.config.rientro;
+                this.writeTextSection(point.titolo, params, offset);
+                this.curY = this.yNewLine;
 
+                
+                point.contenuto?.forEach(line => {
+                  // this.curX = this.config.margini.sx + this.config.rientro * 2;
+                  const offset = this.config.margini.sx + this.config.rientro * 2;
+                  this.writeTextSection(line, params, offset);
+                  this.curY = this.yNewLine;
+                })
+                this.yCursor = this.curY + this.config.staccoriga;
+              }
+            }
             break;
           case 'immagine':
-            console.log("Image insert: ", c[key]);
             let imgParam = c[key] as ImageParams
             await this.insertImage(imgParam);
-            // let img = new Image(imgParam.dimensioni[0], imgParam.dimensioni[1]);
-            // img.src = await loadImageAsBase64(imgParam.path);
-            // this.doc.addImage(img, 'PNG', 15, 15, imgParam.dimensioni[0], imgParam.dimensioni[1]);
-            // this.curX = this.config.margini.sx;
-            // this.curY = imgParam.dimensioni[1] + this.config.staccoriga;
             break;
           case 'tabella':
 
@@ -564,32 +632,6 @@ export class DocumentGenerator {
   }
   //#endregion
 
-  //#region writeTextInLine
-  private writeTextInLine(text: string, maxWidth: number, option: TextOptionsLight): { x: number, y: number } {
-    let words = text.split(" ");
-    let spaceWidth = this.doc.getTextWidth(" "); // Larghezza dello spazio
-    let lineWidth = this.curX; // Larghezza disponibile corrente
-
-    for (let word of words) {
-      let wordWidth = this.doc.getTextWidth(word);
-      // Se la parola non entra nella riga, fai il ritorno a capo
-      if (lineWidth + wordWidth >= maxWidth) {
-        this.curX = this.config.margini.sx; // Reset X
-        this.yCursor = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4;// Vai a capo
-        lineWidth = this.curX; // Reset della larghezza linea
-      }
-
-      // Scrivi la parola
-      if (word !== '') {
-        this.doc.text(word, this.curX, this.curY, option);
-        this.curX += wordWidth + spaceWidth; // Aggiorna X per la parola successiva
-        lineWidth += wordWidth + spaceWidth; // Aggiorna la larghezza della riga
-      }
-    }
-
-    return { x: Number(this.curX), y: Number(this.curY) };
-  }
-  //#endregion
 
 
   //#region LEGACYgenerateDocument

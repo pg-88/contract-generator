@@ -1,7 +1,7 @@
 import { DocumentGenerator, DocumentParams } from '../../ContractGenerator';
 
 async function testDocumentGenerator() {
-    const generator = new DocumentGenerator('test.json');
+    const generator = new DocumentGenerator('testElencoContent.json');
     const params: DocumentParams = {
         parti: {
             fornitore: {

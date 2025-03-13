@@ -66,7 +66,7 @@ var DocumentGenerator = /** @class */ (function () {
         this.curY = 0;
         this.configLoaded = false;
         //#region flag Debug
-        this.debugActive = false;
+        this.debugActive = true;
     }
     DocumentGenerator.prototype.setConfig = function (config) {
         this.config = config.impostazioniPagina;
@@ -113,7 +113,22 @@ var DocumentGenerator = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
-    //#endregion
+    Object.defineProperty(DocumentGenerator.prototype, "yNewLine", {
+        //#endregion
+        get: function () {
+            var newY = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4;
+            if (newY > this.doc.internal.pageSize.getHeight() - this.config.margini.basso) {
+                this.doc.addPage();
+                this.curY = this.config.margini.alto;
+                this.curX = this.config.margini.sx;
+                return this.curY;
+            }
+            else
+                return newY;
+        },
+        enumerable: false,
+        configurable: true
+    });
     //#region debug
     DocumentGenerator.prototype.debugCursor = function (inputColor) {
         if (this.debugActive) {
@@ -212,7 +227,7 @@ var DocumentGenerator = /** @class */ (function () {
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        _b.trys.push([0, 8, , 9]);
+                        _b.trys.push([0, 7, , 8]);
                         this.doc = new jspdf_1.jsPDF();
                         margins = this.template.impostazioniPagina.margini;
                         this.curX = margins.sx;
@@ -221,11 +236,10 @@ var DocumentGenerator = /** @class */ (function () {
                         _i = 0, _a = this.config.fonts;
                         _b.label = 1;
                     case 1:
-                        if (!(_i < _a.length)) return [3 /*break*/, 7];
+                        if (!(_i < _a.length)) return [3 /*break*/, 6];
                         font = _a[_i];
-                        if (!!fontList[font.nome]) return [3 /*break*/, 6];
-                        console.log("Installing font ", font.nome, " id: ", font.id);
-                        if (!font.installPath) return [3 /*break*/, 6];
+                        if (!!fontList[font.nome]) return [3 /*break*/, 5];
+                        if (!font.installPath) return [3 /*break*/, 5];
                         styles = font.style.split(',');
                         paths = font.installPath.split(',');
                         i = 0;
@@ -240,19 +254,18 @@ var DocumentGenerator = /** @class */ (function () {
                         i++;
                         return [3 /*break*/, 2];
                     case 5:
-                        console.log("Path ", font.installPath);
-                        _b.label = 6;
-                    case 6:
                         _i++;
                         return [3 /*break*/, 1];
-                    case 7:
+                    case 6:
                         console.log("updated font list ", this.doc.getFontList());
-                        return [3 /*break*/, 9];
-                    case 8:
+                        //////////////////////////////////////////////////////////////////////////
+                        this.debugMargini();
+                        return [3 /*break*/, 8];
+                    case 7:
                         error_2 = _b.sent();
                         console.error(error_2);
                         throw error_2;
-                    case 9: return [2 /*return*/];
+                    case 8: return [2 /*return*/];
                 }
             });
         });
@@ -316,26 +329,29 @@ var DocumentGenerator = /** @class */ (function () {
     // Inserts images using the current cursor position.
     DocumentGenerator.prototype.insertImage = function (imgParam) {
         return __awaiter(this, void 0, void 0, function () {
-            var startX, format, base64Image, startY, error_3;
+            var startX, startY, format, base64Image, error_3;
             var _a;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
                         _b.trys.push([0, 2, , 3]);
                         startX = this.curX;
+                        startY = this.curY;
+                        if (imgParam.posizione) {
+                            startX += imgParam.posizione[0];
+                            startY += imgParam.posizione[1];
+                        }
                         format = ((_a = imgParam.path.split('.').pop()) === null || _a === void 0 ? void 0 : _a.toUpperCase()) || 'PNG';
                         return [4 /*yield*/, loadImageAsBase64(imgParam.path)];
                     case 1:
                         base64Image = _b.sent();
-                        startY = this.curY;
                         if (startY + imgParam.dimensioni[1] > (this.doc.internal.pageSize.getHeight() - this.config.margini.basso)) {
                             this.doc.addPage();
                             this.curY = this.config.margini.alto;
+                            startY = this.curY + imgParam.posizione[1];
                         }
-                        console.log("base 64 image: ", base64Image);
-                        this.doc.addImage(base64Image, format, startX, this.curY, imgParam.dimensioni[0], imgParam.dimensioni[1]);
-                        console.log("Image inserted at X: ".concat(startX, ", Y: ").concat(this.curY));
-                        this.curY = this.curY + imgParam.dimensioni[1] + this.config.staccoriga;
+                        this.doc.addImage(base64Image, format, startX, startY, imgParam.dimensioni[0], imgParam.dimensioni[1]);
+                        this.curY = startY + imgParam.dimensioni[1] + this.config.staccoriga;
                         return [3 /*break*/, 3];
                     case 2:
                         error_3 = _b.sent();
@@ -355,9 +371,11 @@ var DocumentGenerator = /** @class */ (function () {
      * @returns
      */
     //#region parseText
-    DocumentGenerator.prototype.parseText = function (text) {
+    DocumentGenerator.prototype.parseText = function (text, params) {
         var tagRegex = /<\|(.*?)\|>/g; // Trova i tag <|...|>
         var content = text.replace(tagRegex, "").trim(); // Rimuove i tag e lascia solo il testo principale
+        content = this.applyTemplate(content, params.dynamicFields);
+        content = this.applyPartiPlaceholders(content, params.parti);
         var formattedText = { content: content };
         // Trova tutti i tag e processali
         var matched = Array.from(text.matchAll(tagRegex));
@@ -368,8 +386,6 @@ var DocumentGenerator = /** @class */ (function () {
                 var tagContent = tags_1[_a];
                 if (tagContent.includes(":")) {
                     var _b = tagContent.split(":").map(function (s) { return s.trim(); }), key = _b[0], value = _b[1];
-                    // Mappa i valori nell'oggetto in base alla chiave trovata
-                    // console.log("tag formattazione ", key, value);
                     switch (key) {
                         case "fontId":
                             formattedText.fontId = value;
@@ -464,29 +480,90 @@ var DocumentGenerator = /** @class */ (function () {
         this.yCursor = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72 * 25.4);
     };
     //#endregion
+    //#region writeTextSection
+    DocumentGenerator.prototype.writeTextSection = function (origText, params, offsetX, offsetY) {
+        var pageWidth = this.doc.internal.pageSize.getWidth();
+        var maxWidth = pageWidth - (this.config.margini.sx + this.config.margini.dx);
+        var write = this.parseText(origText, params);
+        var textToWrite = write.content;
+        this.setupText(write.fontId);
+        var option = {
+            align: write.hAlign ? write.hAlign : null,
+            baseline: write.vAlign ? write.vAlign : null
+        };
+        var boxedText = textToWrite.match(/^\^.*\^$/);
+        if (boxedText) {
+            this.debugCursor();
+            textToWrite = textToWrite.replace(/\^/g, '');
+            this.drawBox(textToWrite, maxWidth, option);
+            this.curX = this.config.margini.sx;
+        }
+        else {
+            var section = this.parseBoldSections(textToWrite);
+            // writeSection
+            for (var _i = 0, section_2 = section; _i < section_2.length; _i++) {
+                var s = section_2[_i];
+                var text = s.text.replace(/\*\*/g, '');
+                this.doc.setFont(this.doc.getFont().fontName, s.type);
+                this.debugCursor();
+                this.writeTextInLine(text, maxWidth, option, offsetX, offsetY);
+            }
+        }
+        this.curX = this.config.margini.sx;
+        // this.yCursor = this.curY + this.config.staccoriga;
+    };
+    //#endregion
+    //#region writeTextInLine
+    DocumentGenerator.prototype.writeTextInLine = function (text, maxWidth, option, offsetX, offsetY) {
+        var words = text.split(" ");
+        if (offsetX && this.curX < offsetX)
+            this.xCursor = offsetX;
+        console.log("testo input: ", text, "testo splittato", words);
+        var spaceWidth = this.doc.getTextWidth(" "); // Larghezza dello spazio
+        var lineWidth = this.curX; // Larghezza disponibile corrente
+        for (var _i = 0, words_1 = words; _i < words_1.length; _i++) {
+            var word = words_1[_i];
+            var wordWidth = this.doc.getTextWidth(word);
+            // Se la parola non entra nella riga, fai il ritorno a capo
+            if (lineWidth + wordWidth >= maxWidth) {
+                this.curX = this.config.margini.sx; // Reset X
+                if (offsetX && this.curX < offsetX)
+                    this.xCursor = offsetX;
+                this.yCursor = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4; // Vai a capo
+                lineWidth = this.curX; // Reset della larghezza linea
+            }
+            // Scrivi la parola
+            if (word !== '') {
+                this.doc.text(word, this.curX, this.curY, option);
+                console.log("Scritto la riga ", word);
+                this.curX += wordWidth + spaceWidth; // Aggiorna X per la parola successiva
+                lineWidth += wordWidth + spaceWidth; // Aggiorna la larghezza della riga
+            }
+        }
+        return { x: Number(this.curX), y: Number(this.curY) };
+    };
+    //#endregion
     //#region generateDocument
     DocumentGenerator.prototype.generateDocument = function (params) {
         return __awaiter(this, void 0, void 0, function () {
-            var dynamicFields, dynamicElements, pageWidth, maxWidth, _i, _a, c, _b, _c, key, _d, write, textToWrite, option, boxedText, section, _e, section_2, s, text, imgParam;
-            return __generator(this, function (_f) {
-                switch (_f.label) {
+            var _i, _a, c, _b, _c, key, _d, punti, _e, punti_1, section, _f, _g, point, offset, imgParam;
+            var _this = this;
+            var _h;
+            return __generator(this, function (_j) {
+                switch (_j.label) {
                     case 0: return [4 /*yield*/, this.loadConfig()];
                     case 1:
-                        _f.sent(); // read the config json file  
+                        _j.sent(); // read the config json file  
                         return [4 /*yield*/, this.initDoc()];
                     case 2:
-                        _f.sent(); // prepares the doc obj and the cursor
-                        dynamicFields = params.dynamicFields || {};
-                        dynamicElements = params.dynamicElements || {};
-                        pageWidth = this.doc.internal.pageSize.getWidth();
-                        maxWidth = pageWidth - (this.config.margini.sx + this.config.margini.dx);
+                        _j.sent(); // prepares the doc obj and the cursor
                         _i = 0, _a = this.contenuti;
-                        _f.label = 3;
+                        _j.label = 3;
                     case 3:
                         if (!(_i < _a.length)) return [3 /*break*/, 13];
                         c = _a[_i];
                         _b = 0, _c = Object.keys(c);
-                        _f.label = 4;
+                        _j.label = 4;
                     case 4:
                         if (!(_b < _c.length)) return [3 /*break*/, 12];
                         key = _c[_b];
@@ -499,48 +576,37 @@ var DocumentGenerator = /** @class */ (function () {
                         }
                         return [3 /*break*/, 10];
                     case 5:
-                        write = this.parseText(c[key]);
-                        textToWrite = this.applyTemplate(write.content, dynamicFields);
-                        textToWrite = this.applyPartiPlaceholders(textToWrite, params.parti);
-                        this.setupText(write.fontId);
-                        option = {
-                            align: write.hAlign ? write.hAlign : null,
-                            // baseline: 'middle'
-                            // baseline: write.vAlign ? write.vAlign : null
-                        };
-                        boxedText = textToWrite.match(/^\^.*\^$/);
-                        if (boxedText) {
-                            this.debugCursor();
-                            textToWrite = textToWrite.replace(/\^/g, '');
-                            this.drawBox(textToWrite, maxWidth, option);
-                            this.curX = this.config.margini.sx;
-                        }
-                        else {
-                            section = this.parseBoldSections(textToWrite);
-                            // writeSection
-                            for (_e = 0, section_2 = section; _e < section_2.length; _e++) {
-                                s = section_2[_e];
-                                text = s.text.replace(/\*\*/g, '');
-                                this.doc.setFont(this.doc.getFont().fontName, s.type);
-                                this.debugCursor();
-                                this.writeTextInLine(text, maxWidth, option);
-                            }
-                        }
-                        this.curX = this.config.margini.sx;
+                        this.writeTextSection(c[key], params);
                         this.yCursor = this.curY + this.config.staccoriga;
                         return [3 /*break*/, 11];
-                    case 6: return [3 /*break*/, 11];
+                    case 6:
+                        punti = c[key];
+                        for (_e = 0, punti_1 = punti; _e < punti_1.length; _e++) {
+                            section = punti_1[_e];
+                            // console.log("Section Title", section.titolo);
+                            this.writeTextSection(section.titolo, params);
+                            this.curY += this.config.staccoriga;
+                            for (_f = 0, _g = section.Sottopunti; _f < _g.length; _f++) {
+                                point = _g[_f];
+                                console.log("Point title:", point.titolo, " point content: ", point.contenuto);
+                                offset = this.config.margini.sx + this.config.rientro;
+                                this.writeTextSection(point.titolo, params, offset);
+                                this.curY = this.yNewLine;
+                                (_h = point.contenuto) === null || _h === void 0 ? void 0 : _h.forEach(function (line) {
+                                    // this.curX = this.config.margini.sx + this.config.rientro * 2;
+                                    var offset = _this.config.margini.sx + _this.config.rientro * 2;
+                                    _this.writeTextSection(line, params, offset);
+                                    _this.curY = _this.yNewLine;
+                                });
+                                this.yCursor = this.curY + this.config.staccoriga;
+                            }
+                        }
+                        return [3 /*break*/, 11];
                     case 7:
-                        console.log("Image insert: ", c[key]);
                         imgParam = c[key];
                         return [4 /*yield*/, this.insertImage(imgParam)];
                     case 8:
-                        _f.sent();
-                        // let img = new Image(imgParam.dimensioni[0], imgParam.dimensioni[1]);
-                        // img.src = await loadImageAsBase64(imgParam.path);
-                        // this.doc.addImage(img, 'PNG', 15, 15, imgParam.dimensioni[0], imgParam.dimensioni[1]);
-                        // this.curX = this.config.margini.sx;
-                        // this.curY = imgParam.dimensioni[1] + this.config.staccoriga;
+                        _j.sent();
                         return [3 /*break*/, 11];
                     case 9: return [3 /*break*/, 11];
                     case 10: return [3 /*break*/, 11];
@@ -556,30 +622,6 @@ var DocumentGenerator = /** @class */ (function () {
                 }
             });
         });
-    };
-    //#endregion
-    //#region writeTextInLine
-    DocumentGenerator.prototype.writeTextInLine = function (text, maxWidth, option) {
-        var words = text.split(" ");
-        var spaceWidth = this.doc.getTextWidth(" "); // Larghezza dello spazio
-        var lineWidth = this.curX; // Larghezza disponibile corrente
-        for (var _i = 0, words_1 = words; _i < words_1.length; _i++) {
-            var word = words_1[_i];
-            var wordWidth = this.doc.getTextWidth(word);
-            // Se la parola non entra nella riga, fai il ritorno a capo
-            if (lineWidth + wordWidth >= maxWidth) {
-                this.curX = this.config.margini.sx; // Reset X
-                this.yCursor = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4; // Vai a capo
-                lineWidth = this.curX; // Reset della larghezza linea
-            }
-            // Scrivi la parola
-            if (word !== '') {
-                this.doc.text(word, this.curX, this.curY, option);
-                this.curX += wordWidth + spaceWidth; // Aggiorna X per la parola successiva
-                lineWidth += wordWidth + spaceWidth; // Aggiorna la larghezza della riga
-            }
-        }
-        return { x: Number(this.curX), y: Number(this.curY) };
     };
     return DocumentGenerator;
 }());
