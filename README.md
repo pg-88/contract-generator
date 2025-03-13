@@ -1,9 +1,11 @@
 <# Contract Generator
 
-- [To - Do](#to---do)
 - [Descrizione](#descrizione)
 - [Funzionamento](#funzionamento)
-  - [Deinizione dei **font**](#deinizione-dei-font)
+- [`DocumentParams`](#documentparams)
+- [`DocumentConfig`](#documentconfig)
+  - [Definizione dei **font**](#definizione-dei-font)
+  - [Inserimento testi](#inserimento-testi)
   - [Inserimento immagini](#inserimento-immagini)
   - [Elenchi](#elenchi)
   - [Struttura per il template `.json`](#struttura-per-il-template-json)
@@ -14,17 +16,26 @@
     - [Esempio file](#esempio-file)
     - [Sintassi per formattazione](#sintassi-per-formattazione)
 
-## To - Do 
-- [ ] Lista di font nel .json e all'init delle config installarli tutti
-- [ ] se il parser trova un font non presente, bloccare tutto lanciano un messaggio che indichi la mancanza del font nelle config
-- [ ] modificare interface della config documento
-
 
 ## Descrizione
 
+Libreria che genera pdf con la possibilità di inserire testi, immagini, elenchi, ~~tabelle~~ 
+
 ## Funzionamento
 
-### Deinizione dei **font**
+I dati che vanno a generare il documento arrivano da due oggetti: `DocumentParams` e `DocumentConfig`. 
+- `DocumentConfig` costituisce lo scheletro rigido del documento e da quindi la struttura di base definendo la posizione e gli stili degli elementi nel pdf
+- `DocumentParams` viene passato dinamicamente ogni volta che si genera un documento e contiene i dati variabili come nomi, date, dati contenuti nelle tabelle ecc..
+
+
+
+## `DocumentParams`
+
+## `DocumentConfig`
+
+Essendo un elemento statico che mira a costituire un template fisso per ogni documento, è possibile definirlo all'interno del progetto come file `.json`. Passando al costruttore il percorso di tale file verrà letto direttamente dalla libreria.
+
+### Definizione dei **font**
 
 Possiamo predisporre 
 font disponibili di default: 
@@ -39,7 +50,16 @@ font disponibili di default:
 - symbol: [ 'normal' ],
 - Symbol: [ '' ],
 
+
+### Inserimento testi
+
+I testi possono essere inseriti con la chiave `testo` e il contenuto di tale campo può essere sia una stringa che un'array di stringhe. Passando un array di stringhe, il sistema scrive una riga per ogni elemento dell'array.
+
+Questo testo può essere formattato utilizzando una serie di [tag]() che permettono di definire il font (tra quelli indicati vedi [sopra](#definizione-dei-font)) e l'allineamento del testo.
+
+
 ### Inserimento immagini
+
 Per inserire un'immagine occore inserire, nella sezione contenuti file `json` un elemento `immagine` che conterrà i seguenti campi: 
 ````json
 "immagine": {
