@@ -39,11 +39,11 @@
       "alto": 10,
       "basso": 10
     },
-    "interlinea": 1.01,
+    "interlinea": 1.08,
     "staccoriga": 5,
-    "rientro": 1,
+    "rientro": 3,
     "box": {
-      "background": "#ff00ee",
+      "background": "#ffff12",
       "raggio": 2,
       "padding": 2,
       "lineWidth": 0.12,
@@ -52,11 +52,16 @@
   },
   "contenuti": [
     {
+      "testo": [
+        "Contratto di servizio tra **bnbkit srl** e $cliente:denominazione$",
+        "Altro testo su una nuova riga per vedere dove arriva il cursore",
+        "Magari proviamo a scendere ulteriormente"
+      ],
       "immagine": {
         "path": "./logo-contratto.png",
         "posizione": [
-          80,
-          5
+          0,
+          -5
         ],
         "dimensioni": [
           40,
@@ -64,9 +69,6 @@
         ],
         "coeffDim": 0.042
       }
-    },
-    {
-      "testo": "Contratto di servizio tra **bnbkit srl** e $cliente:denominazione$"
     },
     {
       "testo": "Contratto di servizio tra bnbkit srl e $cliente:denominazione$ in data $data$"
@@ -141,6 +143,20 @@
           ]
         }
       ]
+    },
+    {
+    "immagine": {
+      "path": "./logo-contratto.png",
+      "posizione": [
+        0,
+        -5
+      ],
+      "dimensioni": [
+        40,
+        20
+      ],
+      "coeffDim": 0.042
     }
+  }
   ]
 }

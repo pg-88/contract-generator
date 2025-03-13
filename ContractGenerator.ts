@@ -2,6 +2,7 @@ import { jsPDF, TextOptionsLight } from "jspdf";
 import autotable from "jspdf-autotable";
 import { promises as fs } from 'fs';
 import * as path from 'path';
+import { stringify } from "querystring";
 
 export interface IPartiContratto {
   fornitore: { denominazione: string; codiceFiscale: string; indirizzoCompleto: string; };
@@ -25,7 +26,39 @@ export type DynamicElement = {
   };
 };
 
-interface DocumentFont {
+
+export interface DocumentConfig {
+  versione?: string;
+  impostazioniPagina?: PageSettings;
+  contenuti: Partial<Content>[];
+  /**
+   * move table style inside the definition of a table becouse there could be multiple tables with different styles
+   */
+  tableStyle?: { lineColor?: string; lineWidth?: number; font?: string; fontSize?: number; cellPadding?: number; fillColor?: string; };
+}
+
+export interface PageSettings {
+  /**
+   * the fontDefault is assumed when no other formatting rules is given
+   */
+  // fontDefault: DocumentFont;
+  fonts: DocumentFont[];
+  // fontAlternative?: DocumentFont;
+  margini: { sx: number; dx: number; alto: number; basso: number; },
+  staccoriga: number;
+  interlinea: number;
+  rientro: number;
+  box: {
+    background: string;
+    raggio: number;
+    padding: number;
+    lineWidth: number;
+    lineColor: string;
+  };
+}
+
+
+export interface DocumentFont {
   /**
    * internal name used to refer to a particular configuration
    */
@@ -50,38 +83,21 @@ interface DocumentFont {
   style?: 'bold' | 'italic' | 'normal' | 'bolditalic'
 }
 
-interface PageSettings {
-  /**
-   * the fontDefault is assumed when no other formatting rules is given
-   */
-  fontDefault: DocumentFont;
-  fonts: DocumentFont[];
-  // fontAlternative?: DocumentFont;
-  margini: { sx: number; dx: number; alto: number; basso: number; },
-  staccoriga: number;
-  interlinea: number;
-  rientro: number;
-  box: {
-    background: string;
-    raggio: number;
-    padding: number;
-    lineWidth: number;
-    lineColor: string;
-  };
-}
 
-interface ImageParams {
+
+export interface ImageParams {
   path: string; posizione?: [number, number]; dimensioni?: [number, number]; coeffDim?: number;
 }
-interface Content {
+
+export interface Content {
   // titolo: string;
   // sottotitolo: string;
-  testo: string;
+  testo: string | string[];
   Punti: Elenco[];// Array<{ titolo: string; Sottopunti: Array<{ titolo: string; contenuto: string; }>; }>;
   immagini: ImageParams;
 };
 
-interface Elenco {
+export interface Elenco {
   titolo: string;
   Sottopunti: Array<{
     titolo: string;
@@ -89,20 +105,13 @@ interface Elenco {
   }>;
 }
 
-interface DocumentConfig {
-  versione: string;
-  impostazioniPagina: PageSettings;
-  contenuti: Partial<Content>[];
-  /**
-   * move table style inside the definition of a table becouse there could be multiple tables with different styles
-   */
-  tableStyle?: { lineColor?: string; lineWidth?: number; font?: string; fontSize?: number; cellPadding?: number; fillColor?: string; };
-}
 interface FormattedText {
   content: string;
   fontId?: string;
   hAlign?: HAlign;
   vAlign?: VAlign;
+  maxWidth?: number;
+  riportaCursore?: 'fianco' | 'sotto';
 }
 
 interface SectionsText {
@@ -133,9 +142,11 @@ export class DocumentGenerator {
   private curY: number = 0;
   private configLoaded: boolean = false;
   //#region flag Debug
-  private debugActive: boolean = false;
+  private debugActive: boolean = true;
   //#endregion
-  constructor(private configPath?: string) { }
+  public _configPath: string;
+  public _configObject: DocumentConfig;
+  constructor(private inputConfig?: string | DocumentConfig) { }
 
   public setConfig(config: DocumentConfig) {
     this.config = config.impostazioniPagina;
@@ -145,6 +156,7 @@ export class DocumentGenerator {
 
   //#region setter
   private set yCursor(yPosition: number) {
+    // this.debugCursor('#DC143C')
     const maxY = this.doc.internal.pageSize.getHeight() - this.config.margini.basso;
     if (
       yPosition >= this.config.margini.alto &&
@@ -157,9 +169,9 @@ export class DocumentGenerator {
       this.curY = this.config.margini.alto;
       this.curX = this.config.margini.sx;
     } else {
-      this.debugCursor();
       throw new Error(`${yPosition} is not a valid position for y coordinate`);
     }
+    // this.debugCursor('#96dc14');
   }
 
   private set xCursor(xPosition: number) {
@@ -179,6 +191,9 @@ export class DocumentGenerator {
   }
   //#endregion
 
+  /**
+   * # get the position of the cursor in a new line below the actual.
+   */
   get yNewLine() {
     const newY = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4
     if (newY > this.doc.internal.pageSize.getHeight() - this.config.margini.basso) {
@@ -191,12 +206,14 @@ export class DocumentGenerator {
   }
   //#region debug
   private debugCursor(inputColor?: string) {
+    const noise = Math.random();
+    console.log(`cusor X:(${this.curX.toFixed(4)}), Y:(${this.curY.toFixed(4)}) *** noise: ${noise}`);
     if (this.debugActive) {
       const color = this.doc.getDrawColor();
       if (inputColor) this.doc.setDrawColor(inputColor);
       else this.doc.setDrawColor('green');
-      this.doc.line(this.curX - 2, this.curY, this.curX + 2, this.curY);
-      this.doc.line(this.curX, this.curY - 2, this.curX, this.curY + 2);
+      this.doc.line(this.curX - 2 + noise, this.curY + noise * .1, this.curX + 2, this.curY);
+      this.doc.line(this.curX + noise, this.curY - 2 + noise * .1, this.curX, this.curY + 2);
       this.doc.setDrawColor(color);
 
     }
@@ -270,12 +287,20 @@ export class DocumentGenerator {
   //#region loadConfig
   private async loadConfig(): Promise<void> {
     if (this.configLoaded) return;
-    if (!this.configPath) throw new Error("No configuration provided.");
+    if (!this.inputConfig) throw new Error("No configuration provided.");
     try {
-      const data = await fs.readFile(this.configPath, 'utf8');
-      this.template = JSON.parse(data) as DocumentConfig;
-      this.config = this.template.impostazioniPagina;
-      this.contenuti = this.template.contenuti;
+      if (typeof (this.inputConfig) === 'string') {
+        const data = await fs.readFile(this.inputConfig, 'utf8');
+        this.template = JSON.parse(data) as DocumentConfig;
+        this.config = this.template.impostazioniPagina;
+        this.contenuti = this.template.contenuti;
+      } else {
+        if (!this.inputConfig.contenuti) throw new Error("Missing or incomplete configurations");
+        if ("impostazioniPagina" in this.inputConfig)
+          this.config = this.inputConfig.impostazioniPagina as PageSettings;
+        this.contenuti = this.inputConfig.contenuti as Content[];
+      }
+      console.log("Loaded configurations", this.config, this.contenuti);
       this.configLoaded = true;
     } catch (error) {
       throw new Error(`Error reading configuration file: ${error}`);
@@ -294,9 +319,9 @@ export class DocumentGenerator {
     try {
       this.doc = new jsPDF();
 
-      const margins = this.template.impostazioniPagina.margini;
-      this.curX = margins.sx;
-      this.curY = margins.alto;
+      const margins = this.config.margini;
+      this.curX = margins.sx ? margins.sx : 10;
+      this.curY = margins.alto ? margins.alto : 10;
       const fontList = this.doc.getFontList();
       for (const font of this.config.fonts) {
         // console.log("Font List: ", fontList, " Font selected ", font.nome)
@@ -310,7 +335,7 @@ export class DocumentGenerator {
           }
         }
       }
-      console.log("updated font list ", this.doc.getFontList());
+      // console.log("updated font list ", this.doc.getFontList());
 
       //////////////////////////////////////////////////////////////////////////
       this.debugMargini();
@@ -322,8 +347,11 @@ export class DocumentGenerator {
 
   //#region setupText
   private setupText(fontId: string = 'default'): void {
-    const font = this.config.fonts.find(font => font.id === fontId);
-    if (!font) throw new Error(`no font found with the id ${fontId}`);
+    let font = this.config.fonts.find(font => font.id === fontId);
+    if (!font) {
+      console.warn(`no font found with the id ${fontId}`);
+      font = { nome: 'courier', dimensione: 5, id: 'no configuration', colore: '#000000' };
+    }
     // console.log("Il font definito in config", font);
     this.doc.setFont(font.nome, font.style ? font.style : undefined);
     this.doc.setFontSize(font.dimensione);
@@ -368,10 +396,11 @@ export class DocumentGenerator {
 
   //#region insertImage
   // Inserts images using the current cursor position.
-  private async insertImage(imgParam: ImageParams): Promise<void> {
+  private async insertImage(imgParam: ImageParams): Promise<{x: number;y: number}> {
     try {
       let startX = this.curX;
       let startY = this.curY;
+      this.debugCursor('#FF00FF');
       if (imgParam.posizione) {
         startX += imgParam.posizione[0];
         startY += imgParam.posizione[1];
@@ -386,7 +415,7 @@ export class DocumentGenerator {
       }
       this.doc.addImage(base64Image, format, startX, startY, imgParam.dimensioni[0], imgParam.dimensioni[1]);
       this.curY = startY + imgParam.dimensioni[1] + this.config.staccoriga;
-
+      return {x: this.curX, y: this.curY}
     } catch (error) {
       console.error(error);
     }
@@ -430,8 +459,6 @@ export class DocumentGenerator {
     }
     return formattedText;
   }
-
-
 
 
   //#region parseSections
@@ -479,7 +506,11 @@ export class DocumentGenerator {
   //#endregion
 
   //#region drawBox
-  private drawBox(text: string, maxWidth: number, option: TextOptionsLight) {
+  private drawBox(
+    text: string,
+    maxWidth: number,
+    option: TextOptionsLight
+  ): { x: number, y: number } {
     this.doc.setDrawColor(this.config.box.lineColor);
     this.doc.setLineWidth(this.config.box.lineWidth);
     this.doc.setFillColor(this.config.box.background);
@@ -507,13 +538,20 @@ export class DocumentGenerator {
     x -= this.config.box.padding * .5;
     h = this.config.box.padding + (endCur.y - y);
 
-    this.doc.roundedRect(x, y, w, h, r, r, /*'F'*/);
+    this.doc.roundedRect(x, y, w, h, r, r, 'S');
     this.yCursor = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72 * 25.4);
+    return endCur;
   }
   //#endregion
 
   //#region writeTextSection
-  private writeTextSection(origText: string, params: DocumentParams, offsetX?: number, offsetY?: number) {
+  private writeTextSection(
+    origText: string,
+    params: DocumentParams,
+    offsetX?: number,
+    offsetY?: number
+  ): { x: number, y: number } {
+    let finalCur = { x: NaN, y: NaN };
     const pageWidth = this.doc.internal.pageSize.getWidth();
     const maxWidth = pageWidth - (this.config.margini.sx + this.config.margini.dx);
     let write = this.parseText(origText, params);
@@ -525,9 +563,9 @@ export class DocumentGenerator {
     };
     let boxedText = textToWrite.match(/^\^.*\^$/)
     if (boxedText) {
-      this.debugCursor();
+      // this.debugCursor();
       textToWrite = textToWrite.replace(/\^/g, '');
-      this.drawBox(textToWrite, maxWidth, option);
+      finalCur = this.drawBox(textToWrite, maxWidth, option);
       this.curX = this.config.margini.sx;
     } else {
       let section = this.parseBoldSections(textToWrite);
@@ -535,20 +573,27 @@ export class DocumentGenerator {
       for (const s of section) {
         let text = s.text.replace(/\*\*/g, '');
         this.doc.setFont(this.doc.getFont().fontName, s.type);
-        this.debugCursor();
-        this.writeTextInLine(text, maxWidth, option, offsetX, offsetY);
+        // this.debugCursor();
+        finalCur = this.writeTextInLine(text, maxWidth, option, offsetX, offsetY);
+        // console.log("finalCur ", finalCur);
       }
     }
     this.curX = this.config.margini.sx;
     // this.yCursor = this.curY + this.config.staccoriga;
+    return finalCur;
   }
   //#endregion
 
   //#region writeTextInLine
-  private writeTextInLine(text: string, maxWidth: number, option: TextOptionsLight, offsetX?: number, offsetY?: number): { x: number, y: number } {
+  private writeTextInLine(
+    text: string,
+    maxWidth: number,
+    option: TextOptionsLight,
+    offsetX?: number,
+    offsetY?: number
+  ): { x: number, y: number } {
     let words = text.split(" ");
-    if (offsetX && this.curX<offsetX) this.xCursor = offsetX;
-    console.log("testo input: ", text, "testo splittato", words);
+    if (offsetX && this.curX < offsetX) this.xCursor = offsetX;
     let spaceWidth = this.doc.getTextWidth(" "); // Larghezza dello spazio
     let lineWidth = this.curX; // Larghezza disponibile corrente
 
@@ -557,14 +602,13 @@ export class DocumentGenerator {
       // Se la parola non entra nella riga, fai il ritorno a capo
       if (lineWidth + wordWidth >= maxWidth) {
         this.curX = this.config.margini.sx; // Reset X
-        if (offsetX && this.curX<offsetX) this.xCursor = offsetX;
-        this.yCursor = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4;// Vai a capo
+        if (offsetX && this.curX < offsetX) this.xCursor = offsetX;
+        this.yCursor = this.yNewLine;// Vai a capo
         lineWidth = this.curX; // Reset della larghezza linea
       }
       // Scrivi la parola
       if (word !== '') {
         this.doc.text(word, this.curX, this.curY, option);
-        console.log("Scritto la riga ", word);
         this.curX += wordWidth + spaceWidth; // Aggiorna X per la parola successiva
         lineWidth += wordWidth + spaceWidth; // Aggiorna la larghezza della riga
       }
@@ -578,55 +622,88 @@ export class DocumentGenerator {
   public async generateDocument(params: DocumentParams) {
     await this.loadConfig(); // read the config json file  
     await this.initDoc(); // prepares the doc obj and the cursor
-    // const dynamicFields = params.dynamicFields || {};
-    // const dynamicElements = params.dynamicElements || {};
-    // const pageWidth = this.doc.internal.pageSize.getWidth();
-    // const maxWidth = pageWidth - (this.config.margini.sx + this.config.margini.dx);
 
     // Parse contents
-    for (const c of this.contenuti) {
-      for (const key of Object.keys(c)) {
+    for (const block of this.contenuti) {
+      console.log("blocco", block);
+      const [blockX, blockY] = [this.curX, this.curY];
+      // this.debugCursor('blue');
+      let finalCur = { x: NaN, y: NaN };
+      for (const key of Object.keys(block)) {
         switch (key) {
           case 'testo':
-            this.writeTextSection(c[key], params);
-            this.yCursor = this.curY + this.config.staccoriga;
+            let testo = block[key];
+            if (Array.isArray(testo)) {
+              testo.forEach((riga, i, arr) => {
+                let tmpCur = this.writeTextSection(riga, params);
+                if (tmpCur.x > finalCur.x || Number.isNaN(finalCur.x))
+                  finalCur.x = Number(tmpCur.x);
+                if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
+                  finalCur.y = Number(tmpCur.y);
+                if (i < arr.length - 1) this.yCursor = this.yNewLine;
+                // this.debugCursor('#FA8072');
+              });
+            } else {
+              finalCur = this.writeTextSection(testo, params);
+            }
+            // this.yCursor = this.curY + this.config.staccoriga;
             break;
           case 'Punti':
-            const punti = c[key] as Elenco[];
+            const punti = block[key] as Elenco[];
+
             for (const section of punti) {
               // console.log("Section Title", section.titolo);
-              this.writeTextSection(section.titolo, params);
+              finalCur = this.writeTextSection(section.titolo, params);
               this.curY += this.config.staccoriga;
+              let tmpCur = {x: finalCur.x, y: finalCur.y};
               for (const point of section.Sottopunti) {
                 console.log("Point title:", point.titolo, " point content: ", point.contenuto);
                 // this.curX = this.config.margini.sx + this.config.rientro;
                 const offset = this.config.margini.sx + this.config.rientro;
-                this.writeTextSection(point.titolo, params, offset);
+                tmpCur = this.writeTextSection(point.titolo, params, offset);
                 this.curY = this.yNewLine;
-
-                
                 point.contenuto?.forEach(line => {
-                  // this.curX = this.config.margini.sx + this.config.rientro * 2;
                   const offset = this.config.margini.sx + this.config.rientro * 2;
-                  this.writeTextSection(line, params, offset);
+                  tmpCur = this.writeTextSection(line, params, offset);
                   this.curY = this.yNewLine;
                 })
-                this.yCursor = this.curY + this.config.staccoriga;
+                // this.yCursor = this.curY + this.config.staccoriga;
               }
+              if (tmpCur.x > finalCur.x || Number.isNaN(finalCur.x))
+                finalCur.x = Number(tmpCur.x);
+              if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
+                finalCur.y = Number(tmpCur.y);
             }
             break;
           case 'immagine':
-            let imgParam = c[key] as ImageParams
-            await this.insertImage(imgParam);
+            let imgParam = block[key] as ImageParams
+            let tmpCur = await this.insertImage(imgParam);
+            if (tmpCur.x > finalCur.x || Number.isNaN(finalCur.x))
+              finalCur.x = Number(tmpCur.x);
+            if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
+              finalCur.y = Number(tmpCur.y);
             break;
           case 'tabella':
-
+            // this.doc.table(this.curX, this.curY, {"elemento1": "test1", "elemento 2": "test 2", "Elemento 3", "test 3"}, ["1", "2", "3"], {})
             break;
 
           default:
             break;
         }
+      
+        this.curX = finalCur.x;
+        this.curY = blockY;
+        console.log("elemento terminato")
+        this.debugCursor('#007abb')
+        //ended element
       }
+      //ended block
+      this.yCursor = finalCur.y;
+      this.yCursor = this.yNewLine + this.config.staccoriga;
+      this.curX = this.config.margini.sx;
+      console.log("blocco terminato");
+      this.debugCursor('#88ff00');
+
     }
     this.doc.save("test_image0.pdf");
   }

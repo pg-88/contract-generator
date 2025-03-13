@@ -1,7 +1,35 @@
-import { DocumentGenerator, DocumentParams } from '../../ContractGenerator';
+import { DocumentGenerator, DocumentParams, DocumentConfig } from '../../ContractGenerator';
 
 async function testDocumentGenerator() {
     const generator = new DocumentGenerator('testElencoContent.json');
+    // const generator = new DocumentGenerator({
+    //     versione: '',
+    //     impostazioniPagina: {
+    //         fonts: [],
+    //         margini: {
+    //             sx: 0,
+    //             dx: 0,
+    //             alto: 0,
+    //             basso: 0
+    //         },
+    //         staccoriga: 0,
+    //         interlinea: 0,
+    //         rientro: 0,
+    //         box: {
+    //             background: '',
+    //             raggio: 0,
+    //             padding: 0,
+    //             lineWidth: 0,
+    //             lineColor: ''
+    //         }
+    //     },
+    //     contenuti: [
+    //         {
+    //             testo: "Hello World!",
+    //         }
+    //     ]
+    // });
+
     const params: DocumentParams = {
         parti: {
             fornitore: {
