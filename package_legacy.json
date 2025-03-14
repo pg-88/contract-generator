@@ -1,0 +1,27 @@
+{
+  "name": "@wgrientidev/contract-generator",
+  "version": "1.0.4",
+  "main": "index.js",
+  "module": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "release": "standard-version",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Contract generation",
+  "dependencies": {
+    "jspdf": "^3.0.0",
+    "jspdf-autotable": "^5.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "typescript": "^5.8.2",
+    "standard-version": "^9.5.0"
+  }
+}

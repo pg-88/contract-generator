@@ -637,7 +637,7 @@ export class DocumentGenerator {
     return { x: Number(this.curX), y: Number(this.curY) };
   }
   //#endregion
-
+  
 
   //#region generateDocument
   public async generateDocument(params: DocumentParams) {
