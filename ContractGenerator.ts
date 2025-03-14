@@ -1,8 +1,7 @@
 import { jsPDF, TextOptionsLight } from "jspdf";
-import autotable from "jspdf-autotable";
+import autotable, { UserOptions } from "jspdf-autotable";
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { stringify } from "querystring";
 
 export interface IPartiContratto {
   fornitore: { denominazione: string; codiceFiscale: string; indirizzoCompleto: string; };
@@ -17,13 +16,16 @@ export interface DocumentParams {
 }
 
 export type DynamicElement = {
-  type: 'table' | 'text';
-  config: {
-    head?: string[];
-    body: string[][];
-    options?: any;
-    styles?: any;
-  };
+  type: 'table';
+  // content?: string[][];
+  config: UserOptions;
+  // {
+  //   head?: string[][];
+  //   body: string[][];
+  //   options?: any;
+  //   styles?: any;
+  //   headStyles?: any;
+  // };
 };
 
 
@@ -709,7 +711,7 @@ export class DocumentGenerator {
               );
               this.curX = blockX;
               this.curY = blockY;
-               testoBox.forEach((riga: string, i: number, arr) => {
+              testoBox.forEach((riga: string, i: number, arr) => {
                 tmpCur = this.writeTextSection(riga, params, blockX);
                 if (tmpCur.x > finalCur.x || Number.isNaN(finalCur.x))
                   finalCur.x = Number(tmpCur.x);
@@ -764,11 +766,27 @@ export class DocumentGenerator {
             break;
           //#region 'tabella'
           case 'tabella':
-            const tabData = block[key];
+            const tabData = params.dynamicElements[block[key]];
+            console.log("Dati tabella: ", tabData, "\n$$$$$$$font", this.doc.getFont().fontName);
+            if (!tabData.config.styles) {
+              tabData.config.styles = {
+                font: this.doc.getFont().fontName,
+                fontSize: this.doc.getFontSize(),
+                textColor: this.doc.getTextColor(),
+              }
+            }
             autotable(this.doc, {
+              ...tabData.config as UserOptions,
               startY: this.curY,
-              body: [['hello ', 'world', "!"]]
-            })
+              margin: {
+                left: this.config.margini.sx,
+                right: this.config.margini.dx
+              },
+              styles: {
+                ...tabData.config.styles,
+              }
+            });
+
             break;
           //#region 'saltoRiga'
           case 'saltoRiga':
@@ -780,7 +798,7 @@ export class DocumentGenerator {
           default:
             break;
         }
-
+        console.log("\n$$$$$$$font", this.doc.getFont().fontName);
         if (!Number.isNaN(finalCur.x))
           this.xCursor = finalCur.x;
         if (!Number.isNaN(blockY))

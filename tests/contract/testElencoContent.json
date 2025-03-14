@@ -4,10 +4,11 @@
     "fonts": [
       {
         "id": "default",
-        "nome": "helvetica",
+        "nome": "Montserrat",
         "dimensione": 8,
         "colore": "#000000",
-        "style": "normal"
+        "style": "normal",
+        "installPath": "./Montserrat-Bold.ttf, ./Montserrat-Regular.ttf"
       },
       {
         "id": "helvetica_10",
@@ -23,14 +24,6 @@
         "colore": "#990000",
         "style": "bold, normal",
         "installPath": "./Montserrat-Bold.ttf, ./Montserrat-Regular.ttf"
-      },
-      {
-        "id": "montserrat",
-        "nome": "montserrat",
-        "dimensione": 12,
-        "colore": "#6fcdc2",
-        "style": "normal",
-        "installPath": "./Montserrat-Regular.ttf"
       }
     ],
     "margini": {
@@ -84,7 +77,7 @@
       "testo": "^Omnis illo molestiae ut et amet **blanditiis** amet. Ea voluptas est nostrum saepe corrupti. Incidunt nobis quos voluptatem laboriosam excepturi sed. Deserunt exercitationem praesentium quasi. Ab blanditiis vero sit eveniet. Accusamus quae explicabo rerum rem corrupti placeat similique voluptatem. Non assumenda at voluptas deleniti ipsum numquam accusantium. Laudantium eum ut possimus ullam perferendis nemo. Facere distinctio earum quia. Unde rerum qui dolorum. Repellat esse veniam voluptatum dolores placeat et. Autem et labore provident non. Nihil dolore exercitationem vel hic dolorem voluptatem. Rerum quae natus quia consectetur eaque natus veritatis consequatur. Corporis magnam suscipit nihil autem natus. Quia libero et hic ipsam praesentium omnis aut esse.^"
     },
     {
-      "testo": "^Box della **denominazione** del cliente $cliente:denominazione$^"
+      "testo": "<|fontId: bellaDaDio|>^Box della **denominazione** del cliente $cliente:denominazione$^"
     },
     {
       "Punti": [

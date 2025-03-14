@@ -1,4 +1,15 @@
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -595,7 +606,7 @@ var DocumentGenerator = /** @class */ (function () {
                                     case 0:
                                         finalCur = { x: NaN, y: NaN };
                                         _loop_2 = function (key) {
-                                            var _g, blockX, blockY, _h, testo, testoBox, tmpCur_1, _j, x, y, w, h, punti, _loop_3, _k, punti_1, section, imgParam, tmpCur, rowsNumber;
+                                            var _g, blockX, blockY, _h, testo, testoBox, tmpCur_1, _j, x, y, w, h, punti, _loop_3, _k, punti_1, section, imgParam, tmpCur, tabData, rowsNumber;
                                             return __generator(this, function (_l) {
                                                 switch (_l.label) {
                                                     case 0:
@@ -718,10 +729,19 @@ var DocumentGenerator = /** @class */ (function () {
                                                             finalCur.y = Number(tmpCur.y);
                                                         return [3 /*break*/, 9];
                                                     case 6:
-                                                        (0, jspdf_autotable_1.default)(this_1.doc, {
-                                                            startY: this_1.curY,
-                                                            body: [['hello ', 'world', "!"]]
-                                                        });
+                                                        tabData = params.dynamicElements[block[key]];
+                                                        console.log("Dati tabella: ", tabData, "\n$$$$$$$font", this_1.doc.getFont().fontName);
+                                                        if (!tabData.config.styles) {
+                                                            tabData.config.styles = {
+                                                                font: this_1.doc.getFont().fontName,
+                                                                fontSize: this_1.doc.getFontSize(),
+                                                                textColor: this_1.doc.getTextColor(),
+                                                            };
+                                                        }
+                                                        (0, jspdf_autotable_1.default)(this_1.doc, __assign(__assign({}, tabData.config), { startY: this_1.curY, margin: {
+                                                                left: this_1.config.margini.sx,
+                                                                right: this_1.config.margini.dx
+                                                            }, styles: __assign({}, tabData.config.styles) }));
                                                         return [3 /*break*/, 9];
                                                     case 7:
                                                         console.log("jump ".concat(block[key], " rows"));
@@ -730,6 +750,7 @@ var DocumentGenerator = /** @class */ (function () {
                                                         return [3 /*break*/, 9];
                                                     case 8: return [3 /*break*/, 9];
                                                     case 9:
+                                                        console.log("\n$$$$$$$font", this_1.doc.getFont().fontName);
                                                         if (!Number.isNaN(finalCur.x))
                                                             this_1.xCursor = finalCur.x;
                                                         if (!Number.isNaN(blockY))

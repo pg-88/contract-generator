@@ -70,24 +70,24 @@ function testDocumentGenerator() {
                             TABLE1: {
                                 type: 'table',
                                 config: {
-                                    head: ['Column 1', 'Column 2'],
+                                    head: [['Column 1', 'Column 2']],
                                     body: [
                                         ['Row 1, Col 1', 'Row 1, Col 2'],
                                         ['Row 2, Col 1', 'Row 2, Col 2']
                                     ],
-                                    options: {
-                                        theme: 'striped'
+                                    theme: 'plain',
+                                    headStyles: {
+                                        fillColor: "#9aa0ff",
                                     },
-                                    styles: {
-                                        headStyles: {
-                                            fillColor: "#03fc0b"
-                                        },
-                                        columnStyles: {
-                                            0: {
-                                                fontStyle: 'bold'
-                                            }
+                                    columnStyles: {
+                                        0: {
+                                            fontStyle: 'bold'
                                         }
-                                    }
+                                    },
+                                    // styles: {
+                                    //     lineWidth: 0.01,
+                                    //     lineColor: 50
+                                    // }
                                 }
                             }
                         }
