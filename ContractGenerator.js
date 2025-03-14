@@ -38,6 +38,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DocumentGenerator = void 0;
 var jspdf_1 = require("jspdf");
+var jspdf_autotable_1 = require("jspdf-autotable");
 var fs_1 = require("fs");
 var path = require("path");
 ;
@@ -716,9 +717,12 @@ var DocumentGenerator = /** @class */ (function () {
                                                         if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
                                                             finalCur.y = Number(tmpCur.y);
                                                         return [3 /*break*/, 9];
-                                                    case 6: 
-                                                    // this.doc.table(this.curX, this.curY, {"elemento1": "test1", "elemento 2": "test 2", "Elemento 3", "test 3"}, ["1", "2", "3"], {})
-                                                    return [3 /*break*/, 9];
+                                                    case 6:
+                                                        (0, jspdf_autotable_1.default)(this_1.doc, {
+                                                            startY: this_1.curY,
+                                                            body: [['hello ', 'world', "!"]]
+                                                        });
+                                                        return [3 /*break*/, 9];
                                                     case 7:
                                                         console.log("jump ".concat(block[key], " rows"));
                                                         rowsNumber = Number(block[key]);
@@ -747,7 +751,6 @@ var DocumentGenerator = /** @class */ (function () {
                                         _d++;
                                         return [3 /*break*/, 1];
                                     case 4:
-                                        //ended block
                                         if (!Number.isNaN(finalCur.y))
                                             this_1.yCursor = finalCur.y;
                                         this_1.yCursor = this_1.yNewLine + this_1.config.staccoriga;

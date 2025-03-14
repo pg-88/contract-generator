@@ -748,7 +748,10 @@ export class DocumentGenerator {
               finalCur.y = Number(tmpCur.y);
             break;
           case 'tabella':
-            // this.doc.table(this.curX, this.curY, {"elemento1": "test1", "elemento 2": "test 2", "Elemento 3", "test 3"}, ["1", "2", "3"], {})
+            autotable(this.doc, {
+              startY: this.curY,
+              body: [['hello ', 'world', "!"]]
+            })
             break;
 
           case 'saltoRiga':
