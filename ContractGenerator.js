@@ -77,7 +77,7 @@ var DocumentGenerator = /** @class */ (function () {
         this.curY = 0;
         this.configLoaded = false;
         //#region flag Debug
-        this.debugActive = true;
+        this.debugActive = false;
     }
     DocumentGenerator.prototype.setConfig = function (config) {
         this.config = config.impostazioniPagina;
@@ -294,7 +294,7 @@ var DocumentGenerator = /** @class */ (function () {
                         _i++;
                         return [3 /*break*/, 1];
                     case 6:
-                        // console.log("updated font list ", this.doc.getFontList());
+                        console.log("updated font list ", this.doc.getFontList());
                         //////////////////////////////////////////////////////////////////////////
                         this.debugMargini();
                         return [3 /*break*/, 8];
@@ -316,7 +316,7 @@ var DocumentGenerator = /** @class */ (function () {
             font = { nome: 'courier', dimensione: 5, id: 'no configuration', colore: '#000000' };
         }
         // console.log("Il font definito in config", font);
-        this.doc.setFont(font.nome, font.style ? font.style : undefined);
+        this.doc.setFont(font.nome, 'normal');
         this.doc.setFontSize(font.dimensione);
         this.doc.setTextColor(font.colore ? font.colore : undefined);
     };
@@ -333,12 +333,11 @@ var DocumentGenerator = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         absolutePath = path.resolve(fontPath);
-                        console.log("Installing font ".concat(fontName, " from ").concat(absolutePath));
                         return [4 /*yield*/, fs_1.promises.readFile(absolutePath)];
                     case 1:
                         buffer = _a.sent();
                         base64Font = buffer.toString('base64');
-                        console.log("this.doc.addFileToVFS ".concat(fontName, ".ttf"), "base64Font");
+                        // console.log(`this.doc.addFileToVFS ${fontName}.ttf`, "base64Font");
                         this.doc.addFileToVFS("".concat(fontName, ".ttf"), base64Font);
                         this.doc.addFont("".concat(fontName, ".ttf"), fontName, style);
                         this.doc.setFont(fontName);
@@ -346,6 +345,23 @@ var DocumentGenerator = /** @class */ (function () {
                 }
             });
         });
+    };
+    //#endregion
+    //#region writePageNumber
+    DocumentGenerator.prototype.writePageNumber = function (fontId) {
+        var pages = this.doc.internal.pages;
+        // console.log("pages",pages);
+        for (var p = 1; p < pages.length; p++) {
+            this.doc.setPage(p);
+            this.setupText(fontId);
+            var label = this.config.labelPage ? this.config.labelPage : 'Pagina';
+            var bottomRight = {
+                x: this.doc.internal.pageSize.getWidth() - this.config.margini.dx,
+                y: this.doc.internal.pageSize.getHeight() - this.config.margini.basso
+            };
+            console.log("".concat(label, " ").concat(p));
+            this.doc.text("".concat(label, " ").concat(p), bottomRight.x, bottomRight.y, { align: 'left', baseline: 'hanging' });
+        }
     };
     //#endregion
     //#region insertImage
@@ -550,6 +566,7 @@ var DocumentGenerator = /** @class */ (function () {
         }
         this.curX = this.config.margini.sx;
         // this.yCursor = this.curY + this.config.staccoriga;
+        this.setupText();
         return finalCur;
     };
     //#endregion
@@ -730,7 +747,7 @@ var DocumentGenerator = /** @class */ (function () {
                                                         return [3 /*break*/, 9];
                                                     case 6:
                                                         tabData = params.dynamicElements[block[key]];
-                                                        console.log("Dati tabella: ", tabData, "\n$$$$$$$font", this_1.doc.getFont().fontName);
+                                                        // console.log("Dati tabella: ", tabData, "\n$$$$$$$font", this.doc.getFont().fontName);
                                                         if (!tabData.config.styles) {
                                                             tabData.config.styles = {
                                                                 font: this_1.doc.getFont().fontName,
@@ -738,19 +755,23 @@ var DocumentGenerator = /** @class */ (function () {
                                                                 textColor: this_1.doc.getTextColor(),
                                                             };
                                                         }
+                                                        else if (!tabData.config.styles.font) {
+                                                            tabData.config.styles.font = this_1.doc.getFont().fontName;
+                                                            tabData.config.styles.fontSize = this_1.doc.getFontSize();
+                                                            tabData.config.styles.textColor = this_1.doc.getTextColor();
+                                                        }
                                                         (0, jspdf_autotable_1.default)(this_1.doc, __assign(__assign({}, tabData.config), { startY: this_1.curY, margin: {
                                                                 left: this_1.config.margini.sx,
                                                                 right: this_1.config.margini.dx
                                                             }, styles: __assign({}, tabData.config.styles) }));
                                                         return [3 /*break*/, 9];
                                                     case 7:
-                                                        console.log("jump ".concat(block[key], " rows"));
                                                         rowsNumber = Number(block[key]);
                                                         finalCur.y = this_1.curY + (this_1.doc.getFontSize() * this_1.config.interlinea / 72) * 25.4 * rowsNumber;
                                                         return [3 /*break*/, 9];
                                                     case 8: return [3 /*break*/, 9];
                                                     case 9:
-                                                        console.log("\n$$$$$$$font", this_1.doc.getFont().fontName);
+                                                        // console.log("\n$$$$$$$font", this.doc.getFont().fontName);
                                                         if (!Number.isNaN(finalCur.x))
                                                             this_1.xCursor = finalCur.x;
                                                         if (!Number.isNaN(blockY))
@@ -794,6 +815,7 @@ var DocumentGenerator = /** @class */ (function () {
                         _i++;
                         return [3 /*break*/, 3];
                     case 6:
+                        this.writePageNumber();
                         this.doc.save("test_image0.pdf");
                         return [2 /*return*/];
                 }

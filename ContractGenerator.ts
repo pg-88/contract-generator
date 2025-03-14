@@ -16,7 +16,7 @@ export interface DocumentParams {
 }
 
 export type DynamicElement = {
-  type: 'table';
+  type: 'table' | 'csv';
   // content?: string[][];
   config: UserOptions;
   // {
@@ -57,6 +57,7 @@ export interface PageSettings {
     lineWidth: number;
     lineColor: string;
   };
+  labelPage?: string;
 }
 
 
@@ -156,7 +157,7 @@ export class DocumentGenerator {
   private curY: number = 0;
   private configLoaded: boolean = false;
   //#region flag Debug
-  private debugActive: boolean = true;
+  private debugActive: boolean = false;
   //#endregion
   public _configPath: string;
   public _configObject: DocumentConfig;
@@ -357,7 +358,7 @@ export class DocumentGenerator {
           }
         }
       }
-      // console.log("updated font list ", this.doc.getFontList());
+      console.log("updated font list ", this.doc.getFontList());
 
       //////////////////////////////////////////////////////////////////////////
       this.debugMargini();
@@ -375,7 +376,7 @@ export class DocumentGenerator {
       font = { nome: 'courier', dimensione: 5, id: 'no configuration', colore: '#000000' };
     }
     // console.log("Il font definito in config", font);
-    this.doc.setFont(font.nome, font.style ? font.style : undefined);
+    this.doc.setFont(font.nome, 'normal');
     this.doc.setFontSize(font.dimensione);
     this.doc.setTextColor(font.colore ? font.colore : undefined);
   }
@@ -388,15 +389,34 @@ export class DocumentGenerator {
   //#region installFont
   private async installFont(fontPath: string, fontName: string, style: string = 'normal'): Promise<void> {
     const absolutePath = path.resolve(fontPath);
-    console.log(`Installing font ${fontName} from ${absolutePath}`);
+    // console.log(`Installing font ${fontName} from ${absolutePath}`);
     const buffer = await fs.readFile(absolutePath);
     const base64Font = buffer.toString('base64');
-    console.log(`this.doc.addFileToVFS ${fontName}.ttf`, "base64Font");
+    // console.log(`this.doc.addFileToVFS ${fontName}.ttf`, "base64Font");
     this.doc.addFileToVFS(`${fontName}.ttf`, base64Font);
     this.doc.addFont(`${fontName}.ttf`, fontName, style);
     this.doc.setFont(fontName);
   }
   //#endregion
+
+  //#region writePageNumber
+  private writePageNumber(fontId?: string) {
+    const pages = this.doc.internal.pages;
+    // console.log("pages",pages);
+    for (let p = 1; p < pages.length; p++) {
+      this.doc.setPage(p);
+      this.setupText(fontId);
+      let label = this.config.labelPage ? this.config.labelPage : 'Pagina';
+      let bottomRight = {
+        x: this.doc.internal.pageSize.getWidth() - this.config.margini.dx,
+        y: this.doc.internal.pageSize.getHeight() - this.config.margini.basso
+      };
+      console.log(`${label} ${p}`);
+      this.doc.text(`${label} ${p}`, bottomRight.x, bottomRight.y, { align: 'left', baseline: 'hanging' });
+    }
+  }
+  //#endregion
+
 
   //#region insertImage
   // Inserts images using the current cursor position.
@@ -596,6 +616,7 @@ export class DocumentGenerator {
     }
     this.curX = this.config.margini.sx;
     // this.yCursor = this.curY + this.config.staccoriga;
+    this.setupText();
     return finalCur;
   }
   //#endregion
@@ -767,13 +788,17 @@ export class DocumentGenerator {
           //#region 'tabella'
           case 'tabella':
             const tabData = params.dynamicElements[block[key]];
-            console.log("Dati tabella: ", tabData, "\n$$$$$$$font", this.doc.getFont().fontName);
+            // console.log("Dati tabella: ", tabData, "\n$$$$$$$font", this.doc.getFont().fontName);
             if (!tabData.config.styles) {
               tabData.config.styles = {
                 font: this.doc.getFont().fontName,
                 fontSize: this.doc.getFontSize(),
                 textColor: this.doc.getTextColor(),
               }
+            } else if (!tabData.config.styles.font) {
+              tabData.config.styles.font = this.doc.getFont().fontName;
+              tabData.config.styles.fontSize = this.doc.getFontSize();
+              tabData.config.styles.textColor = this.doc.getTextColor();
             }
             autotable(this.doc, {
               ...tabData.config as UserOptions,
@@ -790,7 +815,7 @@ export class DocumentGenerator {
             break;
           //#region 'saltoRiga'
           case 'saltoRiga':
-            console.log(`jump ${block[key]} rows`);
+            // console.log(`jump ${block[key]} rows`);
             const rowsNumber = Number(block[key]);
             finalCur.y = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4 * rowsNumber;
             break;
@@ -798,7 +823,7 @@ export class DocumentGenerator {
           default:
             break;
         }
-        console.log("\n$$$$$$$font", this.doc.getFont().fontName);
+        // console.log("\n$$$$$$$font", this.doc.getFont().fontName);
         if (!Number.isNaN(finalCur.x))
           this.xCursor = finalCur.x;
         if (!Number.isNaN(blockY))
@@ -809,6 +834,7 @@ export class DocumentGenerator {
       this.yCursor = this.yNewLine + this.config.staccoriga;
       this.curX = this.config.margini.sx;
     }
+    this.writePageNumber();
     this.doc.save("test_image0.pdf");
   }
   //#endregion

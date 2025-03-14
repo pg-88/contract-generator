@@ -60,7 +60,14 @@ async function testDocumentGenerator() {
                     head: [['Column 1', 'Column 2']],
                     body: [
                         ['Row 1, Col 1', 'Row 1, Col 2'],
-                        ['Row 2, Col 1', 'Row 2, Col 2']
+                        ['Row 2, Col 1', 'Row 2, Col 2'],
+                        ['Row 3, Col 1', 'Row 3, Col 2'],
+                        ['Row 4, Col 1', 'Row 4, Col 2'],
+                        ['Row 5, Col 1', 'Row 5, Col 2'],
+                        ['Row 6, Col 1', 'Row 6, Col 2'],
+                        ['Row 7, Col 1', 'Row 7, Col 2'],
+                        ['Row 8, Col 1', 'Row 8, Col 2'],
+                        ['Row 9, Col 1', 'Row 9, Col 2']
                     ],
                     theme: 'plain',
                     headStyles: {
@@ -72,10 +79,10 @@ async function testDocumentGenerator() {
                             fontStyle: 'bold'
                         }
                     },
-                    // styles: {
-                    //     lineWidth: 0.01,
-                    //     lineColor: 50
-                    // }
+                    styles: {
+                        lineWidth: 0.01,
+                        lineColor: 50
+                    }
                 }
             }
         }
