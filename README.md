@@ -8,6 +8,7 @@
   - [Inserimento testi](#inserimento-testi)
   - [Inserimento immagini](#inserimento-immagini)
   - [Elenchi](#elenchi)
+  - [Salto Riga](#salto-riga)
   - [Struttura per il template `.json`](#struttura-per-il-template-json)
     - [Sezioni File](#sezioni-file)
       - [versione](#versione)
@@ -85,6 +86,12 @@ Per inserire un'immagine occore inserire, nella sezione contenuti file `json` un
 - ○ `Alt` + 9 tastierino
 - ► `Alt` + 16 tastierino
 - → `Alt` + 26 tastierino
+
+
+### Salto Riga
+
+Permette di distanziare verticalmente gli elementi della pagina aggiungendo righe vuote a piacere.
+Il nome del campo è `saltoRiga` e il valore che può assumere è un numero intero positivo
 
 ### Struttura per il template `.json`
 

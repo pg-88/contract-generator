@@ -43,7 +43,7 @@
     "staccoriga": 5,
     "rientro": 3,
     "box": {
-      "background": "#ffff12",
+      "background": "#faffc7",
       "raggio": 2,
       "padding": 2,
       "lineWidth": 0.12,
@@ -52,7 +52,7 @@
   },
   "contenuti": [
     {
-      "testo": [
+      "testoBox": [
         "Contratto di servizio tra **bnbkit srl** e $cliente:denominazione$",
         "Altro testo su una nuova riga per vedere dove arriva il cursore",
         "Magari proviamo a scendere ulteriormente"
@@ -61,14 +61,18 @@
         "path": "./logo-contratto.png",
         "posizione": [
           0,
-          -5
+          0
         ],
         "dimensioni": [
           40,
           20
         ],
         "coeffDim": 0.042
-      }
+      },
+      "testo": "Questo è un testo di prova, potrebbe essere una intestazione con il **nome azienda**"
+    },
+    {
+      "saltoRiga": 1
     },
     {
       "testo": "Contratto di servizio tra bnbkit srl e $cliente:denominazione$ in data $data$"
@@ -149,7 +153,7 @@
       "path": "./logo-contratto.png",
       "posizione": [
         0,
-        -5
+        0
       ],
       "dimensioni": [
         40,

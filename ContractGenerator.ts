@@ -93,7 +93,7 @@ export interface Content {
   // titolo: string;
   // sottotitolo: string;
   testo: string | string[];
-  Punti: Elenco[];// Array<{ titolo: string; Sottopunti: Array<{ titolo: string; contenuto: string; }>; }>;
+  Punti: Elenco[];
   immagini: ImageParams;
 };
 
@@ -205,17 +205,25 @@ export class DocumentGenerator {
     } else return newY;
   }
   //#region debug
-  private debugCursor(inputColor?: string) {
+  private debugCursor(inputColor?: string, label?: string) {
     const noise = Math.random();
     console.log(`cusor X:(${this.curX.toFixed(4)}), Y:(${this.curY.toFixed(4)}) *** noise: ${noise}`);
     if (this.debugActive) {
       const color = this.doc.getDrawColor();
-      if (inputColor) this.doc.setDrawColor(inputColor);
+      const txtColor = this.doc.getTextColor();
+      if (inputColor) {
+        this.doc.setTextColor(inputColor);
+        this.doc.setDrawColor(inputColor);
+      }
       else this.doc.setDrawColor('green');
       this.doc.line(this.curX - 2 + noise, this.curY + noise * .1, this.curX + 2, this.curY);
       this.doc.line(this.curX + noise, this.curY - 2 + noise * .1, this.curX, this.curY + 2);
+      const txtSize = this.doc.getFontSize();
+      this.doc.setFontSize(5);
+      if (label) this.doc.text(label, this.curX, this.curY);
       this.doc.setDrawColor(color);
-
+      this.doc.setTextColor(txtColor);
+      this.doc.setFontSize(txtSize);
     }
   }
 
@@ -363,6 +371,7 @@ export class DocumentGenerator {
     return match ? match[1] : null;
   }
 
+  //#region installFont
   private async installFont(fontPath: string, fontName: string, style: string = 'normal'): Promise<void> {
     const absolutePath = path.resolve(fontPath);
     console.log(`Installing font ${fontName} from ${absolutePath}`);
@@ -373,34 +382,15 @@ export class DocumentGenerator {
     this.doc.addFont(`${fontName}.ttf`, fontName, style);
     this.doc.setFont(fontName);
   }
-
-  // // Inserts images using the current cursor position.
-  // private async insertLogo(): Promise<void> {
-  // 	if (this.config.immagini && this.config.immagini.length > 0) {
-  // 		const startX = this.curX;
-  // 		for (const imgConf of this.config.immagini) {
-  // 			const format = imgConf.path.split('.').pop()?.toUpperCase() || 'PNG';
-  // 			const base64Image = await loadImageAsBase64(imgConf.path);
-  // 			const startY = this.curY;
-  // 			if (startY + imgConf.dimensioni[1] > (this.doc.internal.pageSize.getHeight() - this.config.margini.basso)) {
-  // 				this.doc.addPage();
-  // 				this.curY = this.config.margini.alto;
-  // 			}
-  // 			this.doc.addImage(base64Image, format, startX, this.curY, imgConf.dimensioni[0], imgConf.dimensioni[1]);
-  // 			console.log(`Image inserted at X: ${startX}, Y: ${this.curY}`);
-  // 			this.curY = this.curY + imgConf.dimensioni[1] + this.config.staccoriga;
-  // 		}
-  // 	}
-  // }
-
+  //#endregion
 
   //#region insertImage
   // Inserts images using the current cursor position.
-  private async insertImage(imgParam: ImageParams): Promise<{x: number;y: number}> {
+  private async insertImage(imgParam: ImageParams): Promise<{ x: number; y: number }> {
     try {
       let startX = this.curX;
       let startY = this.curY;
-      this.debugCursor('#FF00FF');
+      // this.debugCursor('#FF00FF', 'imageStart');
       if (imgParam.posizione) {
         startX += imgParam.posizione[0];
         startY += imgParam.posizione[1];
@@ -414,8 +404,11 @@ export class DocumentGenerator {
         startY = this.curY + imgParam.posizione[1];
       }
       this.doc.addImage(base64Image, format, startX, startY, imgParam.dimensioni[0], imgParam.dimensioni[1]);
-      this.curY = startY + imgParam.dimensioni[1] + this.config.staccoriga;
-      return {x: this.curX, y: this.curY}
+      this.yCursor = startY + imgParam.dimensioni[1];
+      this.xCursor = this.curX + imgParam.dimensioni[0];
+      //this.xCursor = this.curX + startX + imgParam.dimensioni[0];
+      // this.debugCursor('#2fff00', 'imageEnd');
+      return { x: this.curX, y: this.curY }
     } catch (error) {
       console.error(error);
     }
@@ -511,9 +504,6 @@ export class DocumentGenerator {
     maxWidth: number,
     option: TextOptionsLight
   ): { x: number, y: number } {
-    this.doc.setDrawColor(this.config.box.lineColor);
-    this.doc.setLineWidth(this.config.box.lineWidth);
-    this.doc.setFillColor(this.config.box.background);
     let [x, y, w, h, r] = [
       this.curX,
       this.curY,
@@ -524,6 +514,7 @@ export class DocumentGenerator {
     let section = this.parseBoldSections(text);
     // writeSection
     let endCur = { x: 0, y: 0 };
+    let txtCur = { x: this.curX, y: this.curY };
     for (const s of section) {
       let text = s.text.replace(/\*\*/g, '');
       this.doc.setFont(this.doc.getFont().fontName, s.type);
@@ -531,14 +522,25 @@ export class DocumentGenerator {
     }
     if (!option.baseline || option.baseline === 'alphabetic') {
       y -= this.doc.getFontSize() * this.config.interlinea / 72 * 25.4;
+
     } else if (option.baseline === 'middle') {
       y -= (this.doc.getFontSize() * this.config.interlinea / 72 * 25.4) * 0.5;
     }
 
     x -= this.config.box.padding * .5;
     h = this.config.box.padding + (endCur.y - y);
+    this.doc.setDrawColor(this.config.box.lineColor);
+    this.doc.setLineWidth(this.config.box.lineWidth);
+    this.doc.setFillColor(this.config.box.background);
+    this.doc.roundedRect(x, y, w, h, r, r, 'FD');
 
-    this.doc.roundedRect(x, y, w, h, r, r, 'S');
+    this.xCursor = txtCur.x;
+    this.yCursor = txtCur.y;
+    for (const s of section) {
+      let text = s.text.replace(/\*\*/g, '');
+      this.doc.setFont(this.doc.getFont().fontName, s.type);
+      endCur = this.writeTextInLine(text, maxWidth, option);
+    }
     this.yCursor = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72 * 25.4);
     return endCur;
   }
@@ -552,8 +554,9 @@ export class DocumentGenerator {
     offsetY?: number
   ): { x: number, y: number } {
     let finalCur = { x: NaN, y: NaN };
-    const pageWidth = this.doc.internal.pageSize.getWidth();
-    const maxWidth = pageWidth - (this.config.margini.sx + this.config.margini.dx);
+    const maxWidth = this.doc.internal.pageSize.getWidth()
+      - this.config.margini.dx
+      - (offsetX ? offsetX : this.curX);
     let write = this.parseText(origText, params);
     let textToWrite = write.content;
     this.setupText(write.fontId);
@@ -561,21 +564,20 @@ export class DocumentGenerator {
       align: write.hAlign ? write.hAlign : null,
       baseline: write.vAlign ? write.vAlign : null
     };
-    let boxedText = textToWrite.match(/^\^.*\^$/)
+    let boxedText = textToWrite.match(/^\^.*\^$/);
     if (boxedText) {
-      // this.debugCursor();
       textToWrite = textToWrite.replace(/\^/g, '');
       finalCur = this.drawBox(textToWrite, maxWidth, option);
-      this.curX = this.config.margini.sx;
+      this.curX = /*this.config.margini.sx +*/ offsetX;
     } else {
       let section = this.parseBoldSections(textToWrite);
       // writeSection
       for (const s of section) {
         let text = s.text.replace(/\*\*/g, '');
         this.doc.setFont(this.doc.getFont().fontName, s.type);
-        // this.debugCursor();
+        // this.xCursor = startCur.x;
         finalCur = this.writeTextInLine(text, maxWidth, option, offsetX, offsetY);
-        // console.log("finalCur ", finalCur);
+        // this.debugCursor('#aa00aa', "finalCur");
       }
     }
     this.curX = this.config.margini.sx;
@@ -593,24 +595,31 @@ export class DocumentGenerator {
     offsetY?: number
   ): { x: number, y: number } {
     let words = text.split(" ");
-    if (offsetX && this.curX < offsetX) this.xCursor = offsetX;
-    let spaceWidth = this.doc.getTextWidth(" "); // Larghezza dello spazio
-    let lineWidth = this.curX; // Larghezza disponibile corrente
+    if (offsetX && this.curX < offsetX) {
+      this.xCursor = offsetX;
+    }
+    let spaceWidth = this.doc.getTextWidth(" ");
+    let lineWidth = 0;
+    const netWidth = this.doc.internal.pageSize.getWidth() - this.config.margini.dx;
 
     for (let word of words) {
       let wordWidth = this.doc.getTextWidth(word);
-      // Se la parola non entra nella riga, fai il ritorno a capo
-      if (lineWidth + wordWidth >= maxWidth) {
-        this.curX = this.config.margini.sx; // Reset X
-        if (offsetX && this.curX < offsetX) this.xCursor = offsetX;
-        this.yCursor = this.yNewLine;// Vai a capo
-        lineWidth = this.curX; // Reset della larghezza linea
+      if (lineWidth + wordWidth >= maxWidth || this.curX + wordWidth >= netWidth) {
+        // this.debugCursor("pink", `lineWidth: ${(lineWidth + wordWidth).toFixed(3)}; maxWidth: ${maxWidth.toFixed(3)}`);
+        // re-set x-cursor
+        this.curX = this.config.margini.sx;
+        if (offsetX && this.curX < offsetX) {
+          this.xCursor = offsetX;
+        }
+        this.yCursor = this.yNewLine;
+        lineWidth = 0;
+        // this.debugCursor("#fff71a", "newLine");
       }
-      // Scrivi la parola
+
       if (word !== '') {
         this.doc.text(word, this.curX, this.curY, option);
-        this.curX += wordWidth + spaceWidth; // Aggiorna X per la parola successiva
-        lineWidth += wordWidth + spaceWidth; // Aggiorna la larghezza della riga
+        this.curX += wordWidth + spaceWidth;
+        lineWidth += wordWidth + spaceWidth;
       }
     }
     return { x: Number(this.curX), y: Number(this.curY) };
@@ -625,17 +634,17 @@ export class DocumentGenerator {
 
     // Parse contents
     for (const block of this.contenuti) {
-      console.log("blocco", block);
-      const [blockX, blockY] = [this.curX, this.curY];
-      // this.debugCursor('blue');
+      // console.log("blocco", block);
       let finalCur = { x: NaN, y: NaN };
       for (const key of Object.keys(block)) {
+        const [blockX, blockY] = [this.curX, this.curY];
         switch (key) {
           case 'testo':
+            // this.debugCursor('blue', "BLOCK TESTO");
             let testo = block[key];
             if (Array.isArray(testo)) {
               testo.forEach((riga, i, arr) => {
-                let tmpCur = this.writeTextSection(riga, params);
+                let tmpCur = this.writeTextSection(riga, params, blockX);
                 if (tmpCur.x > finalCur.x || Number.isNaN(finalCur.x))
                   finalCur.x = Number(tmpCur.x);
                 if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
@@ -644,7 +653,62 @@ export class DocumentGenerator {
                 // this.debugCursor('#FA8072');
               });
             } else {
-              finalCur = this.writeTextSection(testo, params);
+              finalCur = this.writeTextSection(testo, params, blockX);
+            }
+            // this.yCursor = this.curY + this.config.staccoriga;
+            break;
+          case 'testoBox':
+            let testoBox = block[key];
+            if (Array.isArray(testoBox)) {
+              let tmpCur = {
+                x: NaN,
+                y: NaN
+              }
+              testoBox.forEach((riga: string, i: number, arr) => {
+                tmpCur = this.writeTextSection(riga, params, blockX);
+                if (tmpCur.x > finalCur.x || Number.isNaN(finalCur.x))
+                  finalCur.x = Number(tmpCur.x);
+                if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
+                  finalCur.y = Number(tmpCur.y);
+                if (i < arr.length - 1) this.yCursor = this.yNewLine;
+                // this.debugCursor('#FA8072');
+              });
+              const [x, y, w, h] = [
+                blockX - this.config.box.padding * 0.5,
+                blockY - (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4 - (this.config.box.padding * 0.5),
+                finalCur.x - blockX + this.config.box.padding,
+                finalCur.y - blockY + this.config.box.padding + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4,
+                this.config.box.raggio,
+                this.config.box.raggio
+              ];
+              
+              this.doc.setDrawColor(this.config.box.lineColor);
+              this.doc.setLineWidth(this.config.box.lineWidth);
+              this.doc.setFillColor(this.config.box.background);
+              this.doc.roundedRect(
+                x,
+                y,
+                w,
+                h,
+                this.config.box.raggio,
+                this.config.box.raggio,
+                "FD"
+              );
+              this.curX = blockX;
+              this.curY = blockY;
+              testoBox.forEach((riga: string, i: number, arr) => {
+                tmpCur = this.writeTextSection(riga, params, blockX);
+                if (tmpCur.x > finalCur.x || Number.isNaN(finalCur.x))
+                  finalCur.x = Number(tmpCur.x);
+                if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
+                  finalCur.y = Number(tmpCur.y);
+                if (i < arr.length - 1) this.yCursor = this.yNewLine;
+                // this.debugCursor('#FA8072');
+              });
+
+
+            } else {
+              console.warn("testoBox value must be an array of strings");
             }
             // this.yCursor = this.curY + this.config.staccoriga;
             break;
@@ -655,9 +719,9 @@ export class DocumentGenerator {
               // console.log("Section Title", section.titolo);
               finalCur = this.writeTextSection(section.titolo, params);
               this.curY += this.config.staccoriga;
-              let tmpCur = {x: finalCur.x, y: finalCur.y};
+              let tmpCur = { x: finalCur.x, y: finalCur.y };
               for (const point of section.Sottopunti) {
-                console.log("Point title:", point.titolo, " point content: ", point.contenuto);
+                // console.log("Point title:", point.titolo, " point content: ", point.contenuto);
                 // this.curX = this.config.margini.sx + this.config.rientro;
                 const offset = this.config.margini.sx + this.config.rientro;
                 tmpCur = this.writeTextSection(point.titolo, params, offset);
@@ -667,7 +731,7 @@ export class DocumentGenerator {
                   tmpCur = this.writeTextSection(line, params, offset);
                   this.curY = this.yNewLine;
                 })
-                // this.yCursor = this.curY + this.config.staccoriga;
+                this.yCursor = this.curY + this.config.staccoriga;
               }
               if (tmpCur.x > finalCur.x || Number.isNaN(finalCur.x))
                 finalCur.x = Number(tmpCur.x);
@@ -687,138 +751,26 @@ export class DocumentGenerator {
             // this.doc.table(this.curX, this.curY, {"elemento1": "test1", "elemento 2": "test 2", "Elemento 3", "test 3"}, ["1", "2", "3"], {})
             break;
 
+          case 'saltoRiga':
+            console.log(`jump ${block[key]} rows`);
+            const rowsNumber = Number(block[key]);
+            finalCur.y = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4 * rowsNumber;
+            break;
           default:
             break;
         }
-      
-        this.curX = finalCur.x;
-        this.curY = blockY;
-        console.log("elemento terminato")
-        this.debugCursor('#007abb')
-        //ended element
+
+        if (!Number.isNaN(finalCur.x))
+          this.xCursor = finalCur.x;
+        if (!Number.isNaN(blockY))
+          this.yCursor = blockY;
       }
-      //ended block
-      this.yCursor = finalCur.y;
+      if (!Number.isNaN(finalCur.y))
+        this.yCursor = finalCur.y;
       this.yCursor = this.yNewLine + this.config.staccoriga;
       this.curX = this.config.margini.sx;
-      console.log("blocco terminato");
-      this.debugCursor('#88ff00');
-
     }
     this.doc.save("test_image0.pdf");
   }
-  //#endregion
-
-
-
-  //#region LEGACYgenerateDocument
-  /**
-   * # generateDocument
-   * Generates the PDF document by processing images, dynamic fields, tables, and text.
-   * Supports inline bold formatting and boxed text.
-   * @param params 
-   * @returns 
-   */
-  // public async LEGACYgenerateDocument(params: DocumentParams): Promise<string | ArrayBuffer> {
-  // 	await this.loadConfig(); // read the config json file  
-  // 	this.initDoc(); // prepares the doc obj and the cursor
-  // 	//await this.insertLogo(); // insert the images
-
-  // 	const dynamicFields = params.dynamicFields || {};
-
-  // 	const dynamicElements = params.dynamicElements || {};
-
-  // 	const pageWidth = this.doc.internal.pageSize.getWidth();
-
-  // 	const maxWidth = pageWidth - (this.config.margini.sx + this.config.margini.dx);
-
-  // let titolo = this.applyTemplate(this.config.testi.titolo, dynamicFields);
-  // 	titolo = this.applyPartiPlaceholders(titolo, params.parti);
-  // 	await this.writeWrappedTextWithFont(this.config.fontTitolo, titolo, this.curX, this.curY, maxWidth);
-  // 	this.curY += this.config.staccoriga;
-  // 	let premessa = this.applyTemplate(this.config.testi.premessa, dynamicFields);
-  // 	premessa = this.applyPartiPlaceholders(premessa, params.parti);
-  // 	await this.writeWrappedTextWithFont(this.config.fontTesto, premessa, this.curX, this.curY, maxWidth);
-  // 	this.curY += this.config.staccoriga;
-  // 	for (const punto of this.config.testi.Punti) {
-  // 		let puntoTitolo = this.applyTemplate(punto.titolo, dynamicFields);
-  // 		puntoTitolo = this.applyPartiPlaceholders(puntoTitolo, params.parti);
-  // 		await this.writeWrappedTextWithFont(this.config.fontTitolo, puntoTitolo, this.curX, this.curY, maxWidth);
-  // 		this.curY += this.config.staccoriga;
-  // 		for (const sub of punto.Sottopunti) {
-  // 			const placeholder = this.extractPlaceholder(sub.titolo);
-  // 			if (placeholder && dynamicElements[placeholder] && dynamicElements[placeholder].type === 'table' && dynamicElements[placeholder].config) {
-  // 				const tableConfig = dynamicElements[placeholder].config!;
-  // 				const defaultTableOptions = this.config.tableStyle || {};
-  // 				autotable(this.doc, {
-  // 					startY: this.curY,
-  // 					head: [tableConfig.head],
-  // 					body: tableConfig.body,
-  // 					...defaultTableOptions,
-  // 					...tableConfig.options,
-  // 					...tableConfig.styles
-  // 				});
-  // 				this.curY = (this.doc as any).lastAutoTable.finalY + this.config.staccoriga;
-  // 			} else {
-  // 				if (sub.titolo) {
-  // 					let titleText = this.applyTemplate(sub.titolo, dynamicFields);
-  // 					titleText = this.applyPartiPlaceholders(titleText, params.parti);
-  // 					if (this.isBoxedText(titleText)) {
-  // 						const boxText = this.stripBoxMarkers(titleText);
-  // 						await this.writeBoxedText(boxText, this.config.fontSottotitolo);
-  // 					} else if (this.isBoldText(titleText)) {
-  // 						const boldText = this.stripBoldMarkers(titleText);
-
-  // 						await this.writeWrappedTextWithFont(this.config.fontSottotitolo,
-  // 							boldText, this.curX + this.config.rientro, this.curY, maxWidth - this.config.rientro);
-  // 					} else {
-  // 						await this.writeWrappedTextWithFont(this.config.fontSottotitolo, titleText, this.curX + this.config.rientro, this.curY, maxWidth - this.config.rientro);
-  // 					}
-  // 					this.curY += this.config.staccoriga;
-  // 				}
-  // 			}
-  // 			const contentPlaceholder = this.extractPlaceholder(sub.contenuto);
-  // 			if (contentPlaceholder && dynamicElements[contentPlaceholder] && dynamicElements[contentPlaceholder].type === 'table' && dynamicElements[contentPlaceholder].config) {
-  // 				const tableConfig = dynamicElements[contentPlaceholder].config!;
-  // 				const defaultTableOptions = this.config.tableStyle || {};
-  // 				autotable(this.doc, {
-  // 					startY: this.curY,
-  // 					head: [tableConfig.head],
-  // 					body: tableConfig.body,
-  // 					...defaultTableOptions,
-  // 					...tableConfig.options,
-  // 					...tableConfig.styles
-  // 				});
-  // 				this.curY = (this.doc as any).lastAutoTable.finalY + this.config.staccoriga;
-  // 			} else if (sub.contenuto) {
-  // 				let contenuto = this.applyTemplate(sub.contenuto, dynamicFields);
-  // 				contenuto = this.applyPartiPlaceholders(contenuto, params.parti);
-  // 				if (this.isBoxedText(contenuto)) {
-  // 					const boxText = this.stripBoxMarkers(contenuto);
-  // 					await this.writeBoxedText(boxText, this.config.fontTesto);
-  // 				} else if (this.isBoldText(contenuto)) {
-  // 					const boldText = this.stripBoldMarkers(contenuto);
-  // 					await this.writeWrappedTextWithFont(this.config.fontTesto,
-  // 						boldText, this.curX + this.config.rientro, this.curY, maxWidth - this.config.rientro);
-  // 				} else {
-  // 					await this.writeWrappedTextWithFont(this.config.fontTesto, contenuto, this.curX + this.config.rientro, this.curY, maxWidth - this.config.rientro);
-  // 				}
-  // 				this.curY += this.config.staccoriga;
-  // 			}
-  // 		}
-  // 		this.curY += this.config.staccoriga;
-  // 	}
-  // 	const tipOutput = params.tipOutput || 'd';
-  // 	const fileName = `Documento_${params.parti.cliente.denominazione}.pdf`;
-  // 	if (tipOutput === 'd') {
-  // 		const pdfBuffer = this.doc.output('arraybuffer');
-  // 		await fs.writeFile(fileName, Buffer.from(pdfBuffer));
-  // 		return fileName;
-  // 	} else if (tipOutput === 'u') {
-  // 		return this.doc.output('arraybuffer');
-  // 	} else {
-  // 		return this.doc.output('arraybuffer');
-  // 	}
-  // }
   //#endregion
 }
