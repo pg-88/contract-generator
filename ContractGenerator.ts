@@ -626,7 +626,6 @@ export class DocumentGenerator {
   }
   //#endregion
 
-
   //#region generateDocument
   public async generateDocument(params: DocumentParams) {
     await this.loadConfig(); // read the config json file  
@@ -639,6 +638,7 @@ export class DocumentGenerator {
       for (const key of Object.keys(block)) {
         const [blockX, blockY] = [this.curX, this.curY];
         switch (key) {
+          //#region 'testo'
           case 'testo':
             // this.debugCursor('blue', "BLOCK TESTO");
             let testo = block[key];
@@ -657,6 +657,7 @@ export class DocumentGenerator {
             }
             // this.yCursor = this.curY + this.config.staccoriga;
             break;
+          //#region 'testoBox'
           case 'testoBox':
             let testoBox = block[key];
             if (Array.isArray(testoBox)) {
@@ -696,7 +697,7 @@ export class DocumentGenerator {
               );
               this.curX = blockX;
               this.curY = blockY;
-              testoBox.forEach((riga: string, i: number, arr) => {
+               testoBox.forEach((riga: string, i: number, arr) => {
                 tmpCur = this.writeTextSection(riga, params, blockX);
                 if (tmpCur.x > finalCur.x || Number.isNaN(finalCur.x))
                   finalCur.x = Number(tmpCur.x);
@@ -712,6 +713,7 @@ export class DocumentGenerator {
             }
             // this.yCursor = this.curY + this.config.staccoriga;
             break;
+          //#region 'Punti'
           case 'Punti':
             const punti = block[key] as Elenco[];
 
@@ -739,6 +741,7 @@ export class DocumentGenerator {
                 finalCur.y = Number(tmpCur.y);
             }
             break;
+          //#region 'immagine'
           case 'immagine':
             let imgParam = block[key] as ImageParams
             let tmpCur = await this.insertImage(imgParam);
@@ -747,18 +750,21 @@ export class DocumentGenerator {
             if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
               finalCur.y = Number(tmpCur.y);
             break;
+          //#region 'tabella'
           case 'tabella':
+            const tabData = block[key];
             autotable(this.doc, {
               startY: this.curY,
               body: [['hello ', 'world', "!"]]
             })
             break;
-
+          //#region 'saltoRiga'
           case 'saltoRiga':
             console.log(`jump ${block[key]} rows`);
             const rowsNumber = Number(block[key]);
             finalCur.y = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4 * rowsNumber;
             break;
+          //#endregion
           default:
             break;
         }
