@@ -90,11 +90,23 @@ export interface ImageParams {
 }
 
 export interface Content {
-  // titolo: string;
-  // sottotitolo: string;
+  /**
+   * simple text, or if string array is passed, text on multiple line
+   */
   testo: string | string[];
+  /**
+   * text in a box (see PageSettings -> box for styling)
+   */
+  testoBox: string[];
+  /**
+   * list
+   */
   Punti: Elenco[];
+  /**
+   * parameters for image
+   */
   immagini: ImageParams;
+
 };
 
 export interface Elenco {
@@ -681,7 +693,7 @@ export class DocumentGenerator {
                 this.config.box.raggio,
                 this.config.box.raggio
               ];
-              
+
               this.doc.setDrawColor(this.config.box.lineColor);
               this.doc.setLineWidth(this.config.box.lineWidth);
               this.doc.setFillColor(this.config.box.background);
