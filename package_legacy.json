@@ -17,12 +17,11 @@
   "description": "Contract generation",
   "dependencies": {
     "jspdf": "^3.0.0",
-    "jspdf-autotable": "^5.0.2",
-    "pdf-lib": "^1.17.1"
+    "jspdf-autotable": "^5.0.2"
   },
   "devDependencies": {
     "@types/node": "^22.13.9",
-    "standard-version": "^9.5.0",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "standard-version": "^9.5.0"
   }
 }
