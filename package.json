@@ -6,9 +6,10 @@
   "types": "index.d.ts",
   "scripts": {
     "release": "standard-version",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "clean": "rm -rf dist",
-    "build": "npm run clean && tsc",
+    "test": "cd tests/contract && tsc test.ts && node test.js",
+    "clean": "powershell -Command \"Remove-Item -Force -Recurse \"dist/*\", \"ContractGenerator.js\" -ErrorAction SilentlyContinue\"",
+    "cleanTest": "powershell -Command \"Remove-Item -Force -Recurse \"dist/*\", \"ContractGenerator.js\", \"tests\\contract\\*.pdf\" -ErrorAction SilentlyContinue\"",
+    "build": "npm run clean && tsc ContractGenerator.ts && tsc",
     "prepublishOnly": "npm run build"
   },
   "keywords": [],
@@ -17,11 +18,12 @@
   "description": "Contract generation",
   "dependencies": {
     "jspdf": "^3.0.0",
-    "jspdf-autotable": "^5.0.2"
+    "jspdf-autotable": "^5.0.2",
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
     "@types/node": "^22.13.9",
-    "typescript": "^5.8.2",
-    "standard-version": "^9.5.0"
+    "standard-version": "^9.5.0",
+    "typescript": "^5.8.2"
   }
 }

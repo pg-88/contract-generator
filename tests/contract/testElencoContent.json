@@ -1,0 +1,161 @@
+{
+  "versione": "0.1.1",
+  "impostazioniPagina": {
+    "fonts": [
+      {
+        "id": "default",
+        "nome": "Montserrat",
+        "dimensione": 8,
+        "colore": "#000000",
+        "style": "bold, normal",
+        "installPath": "./Montserrat-Bold.ttf, ./Montserrat-Regular.ttf"
+      },
+      {
+        "id": "helvetica_10",
+        "nome": "helvetica",
+        "dimensione": 10,
+        "colore": "#000000",
+        "style": "normal"
+      },
+      {
+        "id": "testiPiccoli",
+        "nome": "courier",
+        "dimensione": 6,
+        "colore": "#000000",
+        "style": "italic"
+      }
+    ],
+    "margini": {
+      "sx": 10,
+      "dx": 19,
+      "alto": 10,
+      "basso": 10
+    },
+    "interlinea": 1.08,
+    "staccoriga": 5,
+    "rientro": 3,
+    "box": {
+      "background": "#faffc7",
+      "raggio": 2,
+      "padding": 2,
+      "lineWidth": 0.12,
+      "lineColor": "#cc1269"
+    }
+  },
+  "contenuti": [
+    {
+      "testoBox": [
+        "Contratto di servizio tra **bnbkit srl** e $cliente:denominazione$",
+        "Altro testo su una nuova riga per vedere dove arriva il cursore",
+        "Magari proviamo a scendere ulteriormente"
+      ],
+      "immagine": {
+        "path": "./logo-contratto.png",
+        "posizione": [
+          0,
+          0
+        ],
+        "dimensioni": [
+          40,
+          20
+        ],
+        "coeffDim": 0.042
+      },
+      "testo": "Questo è un testo di prova, potrebbe essere una intestazione con il **nome azienda**"
+    },
+    {
+      "saltoRiga": 1
+    },
+    {
+      "testo": "Contratto di servizio tra bnbkit srl e $cliente:denominazione$ in data $data$"
+    },
+    {
+      "testo": "<|fontId: default|>Il presente contratto (di seguito, \"Contratto\") regola i **termini** e le **condizioni** tra $fornitore:denominazione$, codice fiscale $fornitore:codiceFiscale$, con sede in $fornitore:indirizzoCompleto$, e $cliente:denominazione$, **codice fiscale** $cliente:codiceFiscale$, con sede in $cliente:indirizzoCompleto$, per la fornitura e gestione di kit di biancheria da lavanderie industriali."
+    },
+    {
+      "testo": "^Omnis illo molestiae ut et amet **blanditiis** amet. Ea voluptas est nostrum saepe corrupti. Incidunt nobis quos voluptatem laboriosam excepturi sed. Deserunt exercitationem praesentium quasi. Ab blanditiis vero sit eveniet. Accusamus quae explicabo rerum rem corrupti placeat similique voluptatem. Non assumenda at voluptas deleniti ipsum numquam accusantium. Laudantium eum ut possimus ullam perferendis nemo. Facere distinctio earum quia. Unde rerum qui dolorum. Repellat esse veniam voluptatum dolores placeat et. Autem et labore provident non. Nihil dolore exercitationem vel hic dolorem voluptatem. Rerum quae natus quia consectetur eaque natus veritatis consequatur. Corporis magnam suscipit nihil autem natus. Quia libero et hic ipsam praesentium omnis aut esse.^"
+    },
+    {
+      "testo": "<|fontId: helvetica_10|>^Box della **denominazione** del cliente $cliente:denominazione$^"
+    },
+    {
+      "Punti": [
+        {
+          "titolo": "1. OGGETTO DEL CONTRATTO",
+          "Sottopunti": [
+            {
+              "titolo": "1.1. Servizio fornito da bnbkit srl",
+              "contenuto": [
+                "bnbkit si impegna a:",
+                "• Noleggiare kit unico di biancheria al Cliente.",
+                "• Garantire la movimentazione dei kit, consegnando kit puliti e ritirando kit sporchi secondo le modalità previste.",
+                "• Monitorare i movimenti e il saldo kit tramite il portale cliente."
+              ]
+            },
+            {
+              "titolo": "**1.3. Ordini**",
+              "contenuto": [
+                "Gli **ordini** possono essere caricati:",
+                "• Manualmente tramite lo store e-commerce bnbkit,",
+                "• Automaticamente tramite integrazione con il Channel Manager.",
+                "• Gli ordini devono rispettare i check-out, assicurando che il numero di kit consegnati corrisponda al numero di kit ritirati con una tolleranza di +/-1."
+              ]
+            },
+            {
+              "titolo": "1.4. Scorte minime e gestione emergenze",
+              "contenuto": [
+                "Ogni letto deve disporre di tre kit:",
+                "• Kit in uso.",
+                "• Kit cambio.",
+                "• Kit emergenza: fornito in fase di avviamento punto di consegna a titolo gratuito da bnbkit. Se utilizzato, il Cliente deve pagare il costo di noleggio per il reintegro.",
+                "• Scorte eccessive non sono consentite."
+              ]
+            },
+            {
+              "titolo": "2.2. Il pagamento deve avvenire al momento dell'ordine tramite:",
+              "contenuto": [
+                "• Carta di credito",
+                "• SEPA (bonifico bancario)",
+                "• SDD"
+              ]
+            },
+            {
+              "titolo": "3.3. Consegne mancanti o ritardate",
+              "contenuto": [
+                "In caso di mancata consegna per cause imputabili al Cliente, la consegna sarà riprogrammata con addebito:",
+                "• Del costo della consegna “saltata”.",
+                "• Del costo della nuova consegna."
+              ]
+            },
+            {
+              "titolo": "7.1. Obblighi del Cliente",
+              "contenuto": [
+                "• Garantire l'accesso ai locali per le operazioni di consegna e ritiro.",
+                "• Effettuare ordini in modo corretto e in conformità con i check-out.",
+                "• Segnalare eventuali articoli fallati secondo le modalità previste.",
+                "• Rispettare i termini di pagamento."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+    "immagine": {
+      "path": "./logo-contratto.png",
+      "posizione": [
+        0,
+        0
+      ],
+      "dimensioni": [
+        40,
+        20
+      ],
+      "coeffDim": 0.042
+    }
+  },
+  {
+    "tabella": "TABLE1"
+  }
+  ]
+}
