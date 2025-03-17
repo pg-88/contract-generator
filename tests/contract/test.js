@@ -45,6 +45,14 @@ function testDocumentGenerator() {
                 case 0:
                     generator = new ContractGenerator_1.DocumentGenerator('testElencoContent.json');
                     params = {
+                        nomeFile: "Documento Generato.pdf",
+                        allegaDocDopo: "ddt 4.pdf",
+                        allegaDocPrima: "Prospetto Rate_6.pdf",
+                        numPagina: {
+                            label: "Pag",
+                            fontId: "testiPiccoli",
+                            totPages: "di"
+                        },
                         parti: {
                             fornitore: {
                                 denominazione: "Supplier Co",

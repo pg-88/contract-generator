@@ -2,6 +2,8 @@ import { jsPDF, TextOptionsLight } from "jspdf";
 import autotable, { UserOptions } from "jspdf-autotable";
 import { promises as fs } from 'fs';
 import * as path from 'path';
+import { PDFDocument, PDFPage } from 'pdf-lib'
+import { readFileSync } from "fs";
 
 export interface IPartiContratto {
   fornitore: { denominazione: string; codiceFiscale: string; indirizzoCompleto: string; };
@@ -9,10 +11,28 @@ export interface IPartiContratto {
 }
 
 export interface DocumentParams {
+  nomeFile: string;
   parti?: IPartiContratto;
   tipOutput?: 'f' | 'd' | 'u';
   dynamicFields?: { [key: string]: string };
   dynamicElements?: { [placeholder: string]: DynamicElement };
+  allegaDocPrima?: string;
+  allegaDocDopo?: string;
+  numPagina?: {
+    /**
+     * label to put before the page nuber
+     */
+    label: string;
+    /**
+     * an ID of those defined in the document config
+     */
+    fontId?: string;
+    /**
+     * If present, the string is used between the page number and the total pages
+     * If not present the total will not be visible
+     */
+    totPages?: string;
+  }
 }
 
 export type DynamicElement = {
@@ -400,19 +420,22 @@ export class DocumentGenerator {
   //#endregion
 
   //#region writePageNumber
-  private writePageNumber(fontId?: string) {
+  private writePageNumber(label: string, totPages?: string, fontId?: string,) {
     const pages = this.doc.internal.pages;
     // console.log("pages",pages);
     for (let p = 1; p < pages.length; p++) {
       this.doc.setPage(p);
       this.setupText(fontId);
-      let label = this.config.labelPage ? this.config.labelPage : 'Pagina';
+      let strlabel = label ? label : 'Pagina';
+      strlabel += ` ${p}`;
+      if (totPages) {
+        strlabel += ` ${totPages} ${pages.length - 1}`
+      }
       let bottomRight = {
         x: this.doc.internal.pageSize.getWidth() - this.config.margini.dx,
         y: this.doc.internal.pageSize.getHeight() - this.config.margini.basso
       };
-      console.log(`${label} ${p}`);
-      this.doc.text(`${label} ${p}`, bottomRight.x, bottomRight.y, { align: 'left', baseline: 'hanging' });
+      this.doc.text(strlabel, bottomRight.x, bottomRight.y, { align: 'left', baseline: 'hanging' });
     }
   }
   //#endregion
@@ -833,9 +856,63 @@ export class DocumentGenerator {
         this.yCursor = finalCur.y;
       this.yCursor = this.yNewLine + this.config.staccoriga;
       this.curX = this.config.margini.sx;
+    };
+
+    if (params.numPagina) {
+      this.writePageNumber(params.numPagina.label, params.numPagina.totPages, params.numPagina.fontId);
     }
-    this.writePageNumber();
-    this.doc.save("test_image0.pdf");
+
+    this.doc.save(params.nomeFile);
+
+    await this.mergeDocument(params);
+
+  }
+  //#endregion
+
+  //#region mergeDocument
+  /**
+   * # Merge external pdf
+   * Take the path of a file and the path of the generated doc, merge the generated with 
+   * the input file and saves the final document with `nomeFile` found un `DocumentParams`
+   * 
+   * @param pathDocBefore 
+   * @param pathDocAfter 
+   */
+  private async mergeDocument(params: DocumentParams) {
+    const mergedPdf = await PDFDocument.create();
+
+    const before = await PDFDocument.load(
+      await fs.readFile(params.allegaDocPrima)
+    );
+    const doc = await PDFDocument.load(
+      await fs.readFile(params.nomeFile)
+    );
+    const after = await PDFDocument.load(
+      await fs.readFile(params.allegaDocDopo)
+    );
+
+    // copy pages on the temporary object document
+
+
+    console.log("readed documnent: ", doc);
+    let copiedPages = await mergedPdf.copyPages(before, before.getPageIndices())
+    copiedPages.forEach(page => {
+      mergedPdf.addPage(page);
+    });
+
+    copiedPages = []
+    copiedPages = await mergedPdf.copyPages(doc, doc.getPageIndices());
+    copiedPages.forEach(page => {
+      mergedPdf.addPage(page);
+    });
+
+    copiedPages = []
+    copiedPages = await mergedPdf.copyPages(after, after.getPageIndices());
+    copiedPages.forEach(page => {
+      mergedPdf.addPage(page);
+    });
+
+    await fs.writeFile(params.nomeFile, await mergedPdf.save());
   }
   //#endregion
 }

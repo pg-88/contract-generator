@@ -52,6 +52,7 @@ var jspdf_1 = require("jspdf");
 var jspdf_autotable_1 = require("jspdf-autotable");
 var fs_1 = require("fs");
 var path = require("path");
+var pdf_lib_1 = require("pdf-lib");
 ;
 function loadImageAsBase64(imagePath) {
     return __awaiter(this, void 0, void 0, function () {
@@ -348,19 +349,22 @@ var DocumentGenerator = /** @class */ (function () {
     };
     //#endregion
     //#region writePageNumber
-    DocumentGenerator.prototype.writePageNumber = function (fontId) {
+    DocumentGenerator.prototype.writePageNumber = function (label, totPages, fontId) {
         var pages = this.doc.internal.pages;
         // console.log("pages",pages);
         for (var p = 1; p < pages.length; p++) {
             this.doc.setPage(p);
             this.setupText(fontId);
-            var label = this.config.labelPage ? this.config.labelPage : 'Pagina';
+            var strlabel = label ? label : 'Pagina';
+            strlabel += " ".concat(p);
+            if (totPages) {
+                strlabel += " ".concat(totPages, " ").concat(pages.length - 1);
+            }
             var bottomRight = {
                 x: this.doc.internal.pageSize.getWidth() - this.config.margini.dx,
                 y: this.doc.internal.pageSize.getHeight() - this.config.margini.basso
             };
-            console.log("".concat(label, " ").concat(p));
-            this.doc.text("".concat(label, " ").concat(p), bottomRight.x, bottomRight.y, { align: 'left', baseline: 'hanging' });
+            this.doc.text(strlabel, bottomRight.x, bottomRight.y, { align: 'left', baseline: 'hanging' });
         }
     };
     //#endregion
@@ -815,8 +819,83 @@ var DocumentGenerator = /** @class */ (function () {
                         _i++;
                         return [3 /*break*/, 3];
                     case 6:
-                        this.writePageNumber();
-                        this.doc.save("test_image0.pdf");
+                        ;
+                        if (params.numPagina) {
+                            this.writePageNumber(params.numPagina.label, params.numPagina.totPages, params.numPagina.fontId);
+                        }
+                        this.doc.save(params.nomeFile);
+                        return [4 /*yield*/, this.mergeDocument(params)];
+                    case 7:
+                        _c.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    //#endregion
+    //#region mergeDocument
+    /**
+     * # Merge external pdf
+     * Take the path of a file and the path of the generated doc, merge the generated with
+     * the input file and saves the final document with `nomeFile` found un `DocumentParams`
+     *
+     * @param pathDocBefore
+     * @param pathDocAfter
+     */
+    DocumentGenerator.prototype.mergeDocument = function (params) {
+        return __awaiter(this, void 0, void 0, function () {
+            var mergedPdf, before, _a, _b, doc, _c, _d, after, _e, _f, copiedPages, _g, _h, _j;
+            return __generator(this, function (_k) {
+                switch (_k.label) {
+                    case 0: return [4 /*yield*/, pdf_lib_1.PDFDocument.create()];
+                    case 1:
+                        mergedPdf = _k.sent();
+                        _b = (_a = pdf_lib_1.PDFDocument).load;
+                        return [4 /*yield*/, fs_1.promises.readFile(params.allegaDocPrima)];
+                    case 2: return [4 /*yield*/, _b.apply(_a, [_k.sent()])];
+                    case 3:
+                        before = _k.sent();
+                        _d = (_c = pdf_lib_1.PDFDocument).load;
+                        return [4 /*yield*/, fs_1.promises.readFile(params.nomeFile)];
+                    case 4: return [4 /*yield*/, _d.apply(_c, [_k.sent()])];
+                    case 5:
+                        doc = _k.sent();
+                        _f = (_e = pdf_lib_1.PDFDocument).load;
+                        return [4 /*yield*/, fs_1.promises.readFile(params.allegaDocDopo)];
+                    case 6: return [4 /*yield*/, _f.apply(_e, [_k.sent()])];
+                    case 7:
+                        after = _k.sent();
+                        // copy pages on the temporary object document
+                        console.log("readed documnent: ", doc);
+                        return [4 /*yield*/, mergedPdf.copyPages(before, before.getPageIndices())];
+                    case 8:
+                        copiedPages = _k.sent();
+                        copiedPages.forEach(function (page) {
+                            page.scale(1, 1);
+                            mergedPdf.addPage(page);
+                        });
+                        copiedPages = [];
+                        return [4 /*yield*/, mergedPdf.copyPages(doc, doc.getPageIndices())];
+                    case 9:
+                        copiedPages = _k.sent();
+                        copiedPages.forEach(function (page) {
+                            page.scale(1, 1);
+                            mergedPdf.addPage(page);
+                        });
+                        copiedPages = [];
+                        return [4 /*yield*/, mergedPdf.copyPages(after, after.getPageIndices())];
+                    case 10:
+                        copiedPages = _k.sent();
+                        copiedPages.forEach(function (page) {
+                            page.scale(1, 1);
+                            mergedPdf.addPage(page);
+                        });
+                        _h = (_g = fs_1.promises).writeFile;
+                        _j = [params.nomeFile];
+                        return [4 /*yield*/, mergedPdf.save()];
+                    case 11: return [4 /*yield*/, _h.apply(_g, _j.concat([_k.sent()]))];
+                    case 12:
+                        _k.sent();
                         return [2 /*return*/];
                 }
             });

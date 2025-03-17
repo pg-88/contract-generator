@@ -38,7 +38,7 @@ Essendo un elemento statico che mira a costituire un template fisso per ogni doc
 
 ### Definizione dei **font**
 
-Possiamo predisporre 
+Possiamo predisporre i font da utilizzare nel documento, passando un elemento di tipo `DocumentFont`
 font disponibili di default: 
 - helvetica: [ 'normal', 'bold', 'italic', 'bolditalic' ],
 - Helvetica: [ '', 'Bold', 'Oblique', 'BoldOblique' ],

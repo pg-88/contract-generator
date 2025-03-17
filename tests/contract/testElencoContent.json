@@ -16,6 +16,13 @@
         "dimensione": 10,
         "colore": "#000000",
         "style": "normal"
+      },
+      {
+        "id": "testiPiccoli",
+        "nome": "courier",
+        "dimensione": 6,
+        "colore": "#000000",
+        "style": "italic"
       }
     ],
     "margini": {

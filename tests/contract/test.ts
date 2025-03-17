@@ -31,6 +31,14 @@ async function testDocumentGenerator() {
     // });
 
     const params: DocumentParams = {
+        nomeFile: "Documento Generato.pdf",
+        allegaDocDopo: "ddt 4.pdf",
+        allegaDocPrima: "Prospetto Rate_6.pdf",
+        numPagina: {
+            label: "Pag",
+            fontId: "testiPiccoli",
+            totPages: "di"
+        },
         parti: {
             fornitore: {
                 denominazione: "Supplier Co",
@@ -53,6 +61,7 @@ async function testDocumentGenerator() {
             })
 
         },
+
         dynamicElements: {
             TABLE1: {
                 type: 'table',
