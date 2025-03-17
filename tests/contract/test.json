@@ -95,10 +95,10 @@
       }
     },
     {
-      "Punti": [
+      "punti": [
         {
           "titolo": "1. OGGETTO DEL CONTRATTO",
-          "Sottopunti": [
+          "sottopunti": [
             {
               "titolo": "1.1. Servizio fornito da bnbkit srl",
               "contenuto": "bnbkit si impegna a:\n• Noleggiare kit unico di biancheria al Cliente.\n• Garantire la movimentazione dei kit, consegnando kit puliti e ritirando kit sporchi secondo le modalità previste.\n• Monitorare i movimenti e il saldo kit tramite il portale cliente."
@@ -127,7 +127,7 @@
         },
         {
           "titolo": "2. MODALITÀ DI PAGAMENTO",
-          "Sottopunti": [
+          "sottopunti": [
             {
               "titolo": "2.1. Il Cliente è tenuto a pagare:",
               "contenuto": "• Il costo del noleggio kit secondo le tariffe bnbkit\n• Eventuali costi aggiuntivi (consegna, reintegro, smarrimenti, ecc.)."
@@ -140,7 +140,7 @@
         },
         {
           "titolo": "3. CONSEGNA E RITIRO",
-          "Sottopunti": [
+          "sottopunti": [
             {
               "titolo": "3.1. Modalità di consegna e logistica",
               "contenuto": "bnbkit utilizza un software di ottimizzazione logistica per calcolare i percorsi ottimali nel rispetto degli orari di consegna.\nLe consegne negli appartamenti sono effettuate nella fascia oraria 10:00-15:00. Per altre destinazioni, le consegne saranno effettuate senza vincoli di orario nella giornata programmata."
@@ -161,7 +161,7 @@
         },
         {
           "titolo": "4. MONITORAGGIO E CONTROLLO",
-          "Sottopunti": [
+          "sottopunti": [
             {
               "titolo": "4.1. Monitoraggio RFID",
               "contenuto": "bnbkit monitora costantemente i movimenti dei kit attraverso il sistema Radio Frequency Identification RFID (ogni capo è dotato di chip)."
@@ -174,7 +174,7 @@
         },
         {
           "titolo": "5. DURATA E RISOLUZIONE DEL CONTRATTO",
-          "Sottopunti": [
+          "sottopunti": [
             {
               "titolo": "5.1. Durata",
               "contenuto": "Il contratto ha durata di 12 mesi con rinnovo automatico salvo disdetta scritta con preavviso di 30 giorni."
@@ -191,7 +191,7 @@
         },
         {
           "titolo": "6. CAMPIONATURA",
-          "Sottopunti": [
+          "sottopunti": [
             {
               "titolo": "",
               "contenuto": "6.1. I kit forniti per campionatura sono consegnati a titolo di visione e devono essere restituiti."
@@ -204,7 +204,7 @@
         },
         {
           "titolo": "7. RESPONSABILITÀ DELLE PARTI",
-          "Sottopunti": [
+          "sottopunti": [
             {
               "titolo": "7.1. Obblighi del Cliente",
               "contenuto": "• Garantire l'accesso ai locali per le operazioni di consegna e ritiro.\n• Effettuare ordini in modo corretto e in conformità con i check-out.\n• Segnalare eventuali articoli fallati secondo le modalità previste.\n• Rispettare i termini di pagamento."
@@ -217,7 +217,7 @@
         },
         {
           "titolo": "8. FORO COMPETENTE",
-          "Sottopunti": [
+          "sottopunti": [
             {
               "titolo": "",
               "contenuto": "**Per ogni controversia derivante dal presente contratto, sarà competente il Foro di Genova.**"
@@ -226,7 +226,7 @@
         },
         {
           "titolo": "9. ACCETTAZIONE",
-          "Sottopunti": [
+          "sottopunti": [
             {
               "titolo": "",
               "contenuto": "Le Parti dichiarano di accettare **integralmente** i termini e le condizioni del presente contratto."
@@ -235,7 +235,7 @@
         },
         {
           "titolo": "10. TABELLA",
-          "Sottopunti": [
+          "sottopunti": [
             {
               "titolo": "",
               "contenuto": "$TABLE1$"
@@ -244,7 +244,7 @@
         },
         {
           "titolo": "11. TESTOBOX",
-          "Sottopunti": [
+          "sottopunti": [
             {
               "titolo": "",
               "contenuto": "^prova di testo dentro una **box** prova prova prova^"

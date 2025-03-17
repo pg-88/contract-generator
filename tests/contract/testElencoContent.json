@@ -79,10 +79,10 @@
       "testo": "<|fontId: helvetica_10|>^Box della **denominazione** del cliente $cliente:denominazione$^"
     },
     {
-      "Punti": [
+      "punti": [
         {
           "titolo": "1. OGGETTO DEL CONTRATTO",
-          "Sottopunti": [
+          "sottopunti": [
             {
               "titolo": "1.1. Servizio fornito da bnbkit srl",
               "contenuto": [

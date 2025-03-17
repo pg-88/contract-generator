@@ -2,8 +2,7 @@ import { jsPDF, TextOptionsLight } from "jspdf";
 import autotable, { UserOptions } from "jspdf-autotable";
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { PDFDocument, PDFPage } from 'pdf-lib'
-import { readFileSync } from "fs";
+import { PDFDocument } from 'pdf-lib'
 
 export interface IPartiContratto {
   fornitore: { denominazione: string; codiceFiscale: string; indirizzoCompleto: string; };
@@ -109,7 +108,10 @@ export interface DocumentFont {
 
 
 export interface ImageParams {
-  path: string; posizione?: [number, number]; dimensioni?: [number, number]; coeffDim?: number;
+  path: string; 
+  posizione?: [number, number]; 
+  dimensioni?: [number, number]; 
+  coeffDim?: number;
 }
 
 export interface Content {
@@ -124,7 +126,7 @@ export interface Content {
   /**
    * list
    */
-  Punti: Elenco[];
+  punti: Elenco[];
   /**
    * parameters for image
    */
@@ -134,7 +136,7 @@ export interface Content {
 
 export interface Elenco {
   titolo: string;
-  Sottopunti: Array<{
+  sottopunti: Array<{
     titolo: string;
     contenuto: string[];
   }>;
@@ -181,7 +183,7 @@ export class DocumentGenerator {
   //#endregion
   public _configPath: string;
   public _configObject: DocumentConfig;
-  constructor(private inputConfig?: string | DocumentConfig) { }
+  constructor(private inputConfig?: string | undefined) { }
 
   public setConfig(config: DocumentConfig) {
     this.config = config.impostazioniPagina;
@@ -332,18 +334,10 @@ export class DocumentGenerator {
     if (this.configLoaded) return;
     if (!this.inputConfig) throw new Error("No configuration provided.");
     try {
-      if (typeof (this.inputConfig) === 'string') {
-        const data = await fs.readFile(this.inputConfig, 'utf8');
-        this.template = JSON.parse(data) as DocumentConfig;
-        this.config = this.template.impostazioniPagina;
-        this.contenuti = this.template.contenuti;
-      } else {
-        if (!this.inputConfig.contenuti) throw new Error("Missing or incomplete configurations");
-        if ("impostazioniPagina" in this.inputConfig)
-          this.config = this.inputConfig.impostazioniPagina as PageSettings;
-        this.contenuti = this.inputConfig.contenuti as Content[];
-      }
-      console.log("Loaded configurations", this.config, this.contenuti);
+      const data = await fs.readFile(this.inputConfig, 'utf8');
+      this.template = JSON.parse(data) as DocumentConfig;
+      this.config = this.template.impostazioniPagina;
+      this.contenuti = this.template.contenuti;
       this.configLoaded = true;
     } catch (error) {
       throw new Error(`Error reading configuration file: ${error}`);
@@ -772,7 +766,7 @@ export class DocumentGenerator {
             // this.yCursor = this.curY + this.config.staccoriga;
             break;
           //#region 'Punti'
-          case 'Punti':
+          case 'punti':
             const punti = block[key] as Elenco[];
 
             for (const section of punti) {
@@ -780,7 +774,7 @@ export class DocumentGenerator {
               finalCur = this.writeTextSection(section.titolo, params);
               this.curY += this.config.staccoriga;
               let tmpCur = { x: finalCur.x, y: finalCur.y };
-              for (const point of section.Sottopunti) {
+              for (const point of section.sottopunti) {
                 // console.log("Point title:", point.titolo, " point content: ", point.contenuto);
                 // this.curX = this.config.margini.sx + this.config.rientro;
                 const offset = this.config.margini.sx + this.config.rientro;
@@ -838,7 +832,6 @@ export class DocumentGenerator {
             break;
           //#region 'saltoRiga'
           case 'saltoRiga':
-            // console.log(`jump ${block[key]} rows`);
             const rowsNumber = Number(block[key]);
             finalCur.y = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4 * rowsNumber;
             break;
@@ -846,7 +839,6 @@ export class DocumentGenerator {
           default:
             break;
         }
-        // console.log("\n$$$$$$$font", this.doc.getFont().fontName);
         if (!Number.isNaN(finalCur.x))
           this.xCursor = finalCur.x;
         if (!Number.isNaN(blockY))
