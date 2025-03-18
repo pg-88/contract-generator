@@ -224,30 +224,19 @@ var DocumentGenerator = /** @class */ (function () {
                             throw new Error("No configuration provided.");
                         _a.label = 1;
                     case 1:
-                        _a.trys.push([1, 5, , 6]);
-                        if (!(typeof (this.inputConfig) === 'string')) return [3 /*break*/, 3];
+                        _a.trys.push([1, 3, , 4]);
                         return [4 /*yield*/, fs_1.promises.readFile(this.inputConfig, 'utf8')];
                     case 2:
                         data = _a.sent();
                         this.template = JSON.parse(data);
                         this.config = this.template.impostazioniPagina;
                         this.contenuti = this.template.contenuti;
+                        this.configLoaded = true;
                         return [3 /*break*/, 4];
                     case 3:
-                        if (!this.inputConfig.contenuti)
-                            throw new Error("Missing or incomplete configurations");
-                        if ("impostazioniPagina" in this.inputConfig)
-                            this.config = this.inputConfig.impostazioniPagina;
-                        this.contenuti = this.inputConfig.contenuti;
-                        _a.label = 4;
-                    case 4:
-                        console.log("Loaded configurations", this.config, this.contenuti);
-                        this.configLoaded = true;
-                        return [3 /*break*/, 6];
-                    case 5:
                         error_1 = _a.sent();
                         throw new Error("Error reading configuration file: ".concat(error_1));
-                    case 6: return [2 /*return*/];
+                    case 4: return [2 /*return*/];
                 }
             });
         });
@@ -636,7 +625,7 @@ var DocumentGenerator = /** @class */ (function () {
                                                         switch (_h) {
                                                             case 'testo': return [3 /*break*/, 1];
                                                             case 'testoBox': return [3 /*break*/, 2];
-                                                            case 'Punti': return [3 /*break*/, 3];
+                                                            case 'punti': return [3 /*break*/, 3];
                                                             case 'immagine': return [3 /*break*/, 4];
                                                             case 'tabella': return [3 /*break*/, 6];
                                                             case 'saltoRiga': return [3 /*break*/, 7];
@@ -715,7 +704,7 @@ var DocumentGenerator = /** @class */ (function () {
                                                             finalCur = this_1.writeTextSection(section.titolo, params);
                                                             this_1.curY += this_1.config.staccoriga;
                                                             var tmpCur_2 = { x: finalCur.x, y: finalCur.y };
-                                                            for (var _m = 0, _o = section.Sottopunti; _m < _o.length; _m++) {
+                                                            for (var _m = 0, _o = section.sottopunti; _m < _o.length; _m++) {
                                                                 var point = _o[_m];
                                                                 // console.log("Point title:", point.titolo, " point content: ", point.contenuto);
                                                                 // this.curX = this.config.margini.sx + this.config.rientro;
@@ -775,7 +764,6 @@ var DocumentGenerator = /** @class */ (function () {
                                                         return [3 /*break*/, 9];
                                                     case 8: return [3 /*break*/, 9];
                                                     case 9:
-                                                        // console.log("\n$$$$$$$font", this.doc.getFont().fontName);
                                                         if (!Number.isNaN(finalCur.x))
                                                             this_1.xCursor = finalCur.x;
                                                         if (!Number.isNaN(blockY))
@@ -824,10 +812,12 @@ var DocumentGenerator = /** @class */ (function () {
                             this.writePageNumber(params.numPagina.label, params.numPagina.totPages, params.numPagina.fontId);
                         }
                         this.doc.save(params.nomeFile);
+                        if (!(params.allegaDocDopo || params.allegaDocPrima)) return [3 /*break*/, 8];
                         return [4 /*yield*/, this.mergeDocument(params)];
                     case 7:
                         _c.sent();
-                        return [2 /*return*/];
+                        _c.label = 8;
+                    case 8: return [2 /*return*/];
                 }
             });
         });
@@ -871,7 +861,6 @@ var DocumentGenerator = /** @class */ (function () {
                     case 8:
                         copiedPages = _k.sent();
                         copiedPages.forEach(function (page) {
-                            page.scale(1, 1);
                             mergedPdf.addPage(page);
                         });
                         copiedPages = [];
@@ -879,7 +868,6 @@ var DocumentGenerator = /** @class */ (function () {
                     case 9:
                         copiedPages = _k.sent();
                         copiedPages.forEach(function (page) {
-                            page.scale(1, 1);
                             mergedPdf.addPage(page);
                         });
                         copiedPages = [];
@@ -887,7 +875,6 @@ var DocumentGenerator = /** @class */ (function () {
                     case 10:
                         copiedPages = _k.sent();
                         copiedPages.forEach(function (page) {
-                            page.scale(1, 1);
                             mergedPdf.addPage(page);
                         });
                         _h = (_g = fs_1.promises).writeFile;

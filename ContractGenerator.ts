@@ -849,15 +849,12 @@ export class DocumentGenerator {
       this.yCursor = this.yNewLine + this.config.staccoriga;
       this.curX = this.config.margini.sx;
     };
-
     if (params.numPagina) {
       this.writePageNumber(params.numPagina.label, params.numPagina.totPages, params.numPagina.fontId);
     }
-
     this.doc.save(params.nomeFile);
-
-    await this.mergeDocument(params);
-
+    if (params.allegaDocDopo || params.allegaDocPrima)
+      await this.mergeDocument(params);
   }
   //#endregion
 
