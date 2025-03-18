@@ -1,7 +1,7 @@
 import { DocumentGenerator, DocumentParams, DocumentConfig } from '../../ContractGenerator';
 
 async function testDocumentGenerator() {
-    const generator = new DocumentGenerator('testElencoContent.json');
+    const generator = new DocumentGenerator('test.json');
     // const generator = new DocumentGenerator({
     //     versione: '',
     //     impostazioniPagina: {
@@ -32,8 +32,8 @@ async function testDocumentGenerator() {
 
     const params: DocumentParams = {
         nomeFile: "Documento Generato.pdf",
-        allegaDocDopo: "ddt 4.pdf",
-        allegaDocPrima: "Prospetto Rate_6.pdf",
+        // allegaDocDopo: "",
+        // allegaDocPrima: "",
         numPagina: {
             label: "Pag",
             fontId: "testiPiccoli",

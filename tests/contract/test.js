@@ -43,11 +43,11 @@ function testDocumentGenerator() {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    generator = new ContractGenerator_1.DocumentGenerator('testElencoContent.json');
+                    generator = new ContractGenerator_1.DocumentGenerator('test.json');
                     params = {
                         nomeFile: "Documento Generato.pdf",
-                        allegaDocDopo: "ddt 4.pdf",
-                        allegaDocPrima: "Prospetto Rate_6.pdf",
+                        // allegaDocDopo: "",
+                        // allegaDocPrima: "",
                         numPagina: {
                             label: "Pag",
                             fontId: "testiPiccoli",
