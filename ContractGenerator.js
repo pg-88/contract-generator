@@ -215,26 +215,33 @@ var DocumentGenerator = /** @class */ (function () {
     DocumentGenerator.prototype.loadConfig = function () {
         return __awaiter(this, void 0, void 0, function () {
             var data, error_1;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var _a, _b, _c, _d;
+            return __generator(this, function (_e) {
+                switch (_e.label) {
                     case 0:
                         if (this.configLoaded)
                             return [2 /*return*/];
                         if (!this.inputConfig)
                             throw new Error("No configuration provided.");
-                        _a.label = 1;
+                        _e.label = 1;
                     case 1:
-                        _a.trys.push([1, 3, , 4]);
+                        _e.trys.push([1, 3, , 4]);
                         return [4 /*yield*/, fs_1.promises.readFile(this.inputConfig, 'utf8')];
                     case 2:
-                        data = _a.sent();
+                        data = _e.sent();
                         this.template = JSON.parse(data);
                         this.config = this.template.impostazioniPagina;
+                        this.config.margini = {
+                            sx: ((_a = this.template.impostazioniPagina.margini) === null || _a === void 0 ? void 0 : _a.sx) ? this.template.impostazioniPagina.margini.sx : 8,
+                            dx: ((_b = this.template.impostazioniPagina.margini) === null || _b === void 0 ? void 0 : _b.dx) ? this.template.impostazioniPagina.margini.dx : 8,
+                            alto: ((_c = this.template.impostazioniPagina.margini) === null || _c === void 0 ? void 0 : _c.alto) ? this.template.impostazioniPagina.margini.alto : 8,
+                            basso: ((_d = this.template.impostazioniPagina.margini) === null || _d === void 0 ? void 0 : _d.basso) ? this.template.impostazioniPagina.margini.basso : 8,
+                        };
                         this.contenuti = this.template.contenuti;
                         this.configLoaded = true;
                         return [3 /*break*/, 4];
                     case 3:
-                        error_1 = _a.sent();
+                        error_1 = _e.sent();
                         throw new Error("Error reading configuration file: ".concat(error_1));
                     case 4: return [2 /*return*/];
                 }
@@ -259,6 +266,7 @@ var DocumentGenerator = /** @class */ (function () {
                         margins = this.config.margini;
                         this.curX = margins.sx ? margins.sx : 10;
                         this.curY = margins.alto ? margins.alto : 10;
+                        console.log("Init cursor: ", this.curX, this.curY);
                         fontList = this.doc.getFontList();
                         _i = 0, _a = this.config.fonts;
                         _b.label = 1;
@@ -598,12 +606,14 @@ var DocumentGenerator = /** @class */ (function () {
     //#region generateDocument
     DocumentGenerator.prototype.generateDocument = function (params) {
         return __awaiter(this, void 0, void 0, function () {
-            var _loop_1, this_1, _i, _a, block;
+            var _loop_1, this_1, _i, _a, block, error_4;
             var _this = this;
             var _b;
             return __generator(this, function (_c) {
                 switch (_c.label) {
-                    case 0: return [4 /*yield*/, this.loadConfig()];
+                    case 0:
+                        _c.trys.push([0, 9, , 10]);
+                        return [4 /*yield*/, this.loadConfig()];
                     case 1:
                         _c.sent(); // read the config json file  
                         return [4 /*yield*/, this.initDoc()];
@@ -756,7 +766,14 @@ var DocumentGenerator = /** @class */ (function () {
                                                         (0, jspdf_autotable_1.default)(this_1.doc, __assign(__assign({}, tabData.config), { startY: this_1.curY, margin: {
                                                                 left: this_1.config.margini.sx,
                                                                 right: this_1.config.margini.dx
-                                                            }, styles: __assign({}, tabData.config.styles) }));
+                                                            }, styles: __assign({}, tabData.config.styles), didDrawCell: function (data) {
+                                                                _this.xCursor = data.cursor.x;
+                                                                _this.yCursor = data.cursor.y;
+                                                            } }));
+                                                        finalCur = {
+                                                            x: this_1.curX,
+                                                            y: this_1.yNewLine
+                                                        };
                                                         return [3 /*break*/, 9];
                                                     case 7:
                                                         rowsNumber = Number(block[key]);
@@ -817,7 +834,12 @@ var DocumentGenerator = /** @class */ (function () {
                     case 7:
                         _c.sent();
                         _c.label = 8;
-                    case 8: return [2 /*return*/];
+                    case 8: return [3 /*break*/, 10];
+                    case 9:
+                        error_4 = _c.sent();
+                        console.error(error_4);
+                        return [3 /*break*/, 10];
+                    case 10: return [2 /*return*/];
                 }
             });
         });

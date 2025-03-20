@@ -79,6 +79,9 @@
       "testo": "<|fontId: helvetica_10|>^Box della **denominazione** del cliente $cliente:denominazione$^"
     },
     {
+      "tabella": "TABLE1"
+    },
+    {
       "punti": [
         {
           "titolo": "1. OGGETTO DEL CONTRATTO",
@@ -129,21 +132,18 @@
       ]
     },
     {
-    "immagine": {
-      "path": "./logo.png",
-      "posizione": [
-        0,
-        0
-      ],
-      "dimensioni": [
-        40,
-        20
-      ],
-      "coeffDim": 0.042
+      "immagine": {
+        "path": "./logo.png",
+        "posizione": [
+          0,
+          0
+        ],
+        "dimensioni": [
+          40,
+          30
+        ],
+        "coeffDim": 0.042
+      }
     }
-  },
-  {
-    "tabella": "TABLE1"
-  }
   ]
 }
