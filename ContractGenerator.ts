@@ -65,7 +65,7 @@ export interface PageSettings {
   // fontDefault: DocumentFont;
   fonts: DocumentFont[];
   // fontAlternative?: DocumentFont;
-  margini: { sx: number; dx: number; alto: number; basso: number; },
+  margini?: { sx: number; dx: number; alto: number; basso: number; },
   staccoriga: number;
   interlinea: number;
   rientro: number;
