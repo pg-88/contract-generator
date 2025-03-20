@@ -1,22 +1,29 @@
-<# Contract Generator
+# Contract Generator
+- [Contract Generator](#contract-generator)
+  - [To Do:](#to-do)
+  - [Descrizione](#descrizione)
+  - [Funzionamento](#funzionamento)
+  - [`DocumentParams`](#documentparams)
+    - [Numero della pagina](#numero-della-pagina)
+  - [`DocumentConfig`](#documentconfig)
+    - [Definizione dei **font**](#definizione-dei-font)
+    - [Inserimento testi](#inserimento-testi)
+    - [Inserimento immagini](#inserimento-immagini)
+    - [Elenchi](#elenchi)
+    - [Salto Riga](#salto-riga)
+    - [Struttura per il template `.json`](#struttura-per-il-template-json)
+      - [Sezioni File](#sezioni-file)
+        - [versione](#versione)
+        - [impostazioni pagina](#impostazioni-pagina)
+        - [contenuti](#contenuti)
+      - [Esempio file](#esempio-file)
+      - [Sintassi per formattazione](#sintassi-per-formattazione)
 
-- [Descrizione](#descrizione)
-- [Funzionamento](#funzionamento)
-- [`DocumentParams`](#documentparams)
-- [`DocumentConfig`](#documentconfig)
-  - [Definizione dei **font**](#definizione-dei-font)
-  - [Inserimento testi](#inserimento-testi)
-  - [Inserimento immagini](#inserimento-immagini)
-  - [Elenchi](#elenchi)
-  - [Salto Riga](#salto-riga)
-  - [Struttura per il template `.json`](#struttura-per-il-template-json)
-    - [Sezioni File](#sezioni-file)
-      - [versione](#versione)
-      - [impostazioni pagina](#impostazioni-pagina)
-      - [contenuti](#contenuti)
-    - [Esempio file](#esempio-file)
-    - [Sintassi per formattazione](#sintassi-per-formattazione)
-
+## To Do:
+- [ ] Gestione degli errori, usando la libreria in un progetto express, gli errori bloccano il server
+- [ ] margini provoca errori se non vengono passati tutti i campi. Pensare di assegnare un valore di default
+- [ ] *Passare un offset orizzontale per i testi?*
+- [ ] Finire la documentazione 
 
 ## Descrizione
 
@@ -31,6 +38,21 @@ I dati che vanno a generare il documento arrivano da due oggetti: `DocumentParam
 
 
 ## `DocumentParams`
+
+### Numero della pagina
+``` javascript
+  numPagina: {
+      label: "Pag",
+      fontId: "testiPiccoli",
+      totPages: "di"
+  },
+```
+Per inserire il numero della pagina in calce al documento è necessario passare un oggetto simile a quello sopra.
+- `label` sarà l'etichetta davanti al numero. Questo può essere anche stringa vuota ma è obbligatorio che sia presente.
+- `fontId` se si vuole assegnare un font diverso da quello di default occore passare l'id di uno dei font definiti nelle [configurazioni](#definizione-dei-font)
+- `totPages` se presente questa stringa viene posta tra il numero di pagina e il totale delle pagine del documento, altrimenti non viene mostrato il totale.
+
+ 
 
 ## `DocumentConfig`
 
@@ -50,6 +72,8 @@ font disponibili di default:
 - ZapfDingbats: [ '' ],
 - symbol: [ 'normal' ],
 - Symbol: [ '' ],
+
+
 
 
 ### Inserimento testi
@@ -113,204 +137,151 @@ i tipi di contenuto possono essere:
 {
   "versione": "0.1.1",
   "impostazioniPagina": {
-    "fontDefault": {
-      "nome": "courier",
-      "dimensione": 12,
-      "colore": "#6fcdc2",
-      "installPath": "./Montserrat-Bold.ttf"
-    },
-    "fontAlternative": {
-      "nome": "helvetica",
-      "dimensione": 10,
-      "colore": "#000000"
-    },
+    "fonts": [
+      {
+        "id": "default",
+        "nome": "Montserrat",
+        "dimensione": 8,
+        "colore": "#000000",
+        "style": "bold, normal",
+        "installPath": "./Montserrat-Bold.ttf, ./Montserrat-Regular.ttf"
+      },
+      {
+        "id": "helvetica_10",
+        "nome": "helvetica",
+        "dimensione": 10,
+        "colore": "#000000",
+        "style": "normal"
+      },
+      {
+        "id": "testiPiccoli",
+        "nome": "courier",
+        "dimensione": 6,
+        "colore": "#000000",
+        "style": "italic"
+      }
+    ],
     "margini": {
       "sx": 10,
-      "dx": 10,
-      "alto": 18,
+      "dx": 19,
+      "alto": 10,
       "basso": 10
     },
+    "interlinea": 1.08,
     "staccoriga": 5,
-    "rientro": 5,
+    "rientro": 3,
     "box": {
-      "backgrund": "#d9efee",
-      "raggio": 5
+      "background": "#faffc7",
+      "raggio": 2,
+      "padding": 2,
+      "lineWidth": 0.12,
+      "lineColor": "#cc1269"
     }
   },
-  "contenuti": {
-    "titolo": "Contratto di servizio tra bnbkit srl e $cliente:denominazione$",
-    "sottotitolo": "Il presente contratto (di seguito, \"Contratto\") regola i termini e le condizioni tra $fornitore:denominazione$, codice fiscale $fornitore:codiceFiscale$, con sede in $fornitore:indirizzoCompleto$, e $cliente:denominazione$, codice fiscale $cliente:codiceFiscale$, con sede in $cliente:indirizzoCompleto$, per la fornitura e gestione di kit di biancheria da lavanderie industriali.",
-    "corpoTesto": "^Box della denominazione del cliente $clienteNome$^",
+  "contenuti": [
+    {
+      "testoBox": [
+        "Contratto di servizio tra **pincoPallino Joe srl** e $cliente:denominazione$",
+        "Altro testo su una nuova riga per vedere dove arriva il cursore",
+        "Magari proviamo a scendere ulteriormente"
+      ],
+      "immagine": {
+        "path": "./logo.png",
+        "posizione": [
+          0,
+          0
+        ],
+        "dimensioni": [
+          40,
+          20
+        ],
+        "coeffDim": 0.042
+      },
+      "testo": "Questo è un testo di prova, potrebbe essere una intestazione con il **nome azienda**"
+    },
+    {
+      "saltoRiga": 1
+    },
+    {
+      "testo": "Contratto di servizio tra pincoPallino Joe srl e $cliente:denominazione$ in data $data$"
+    },
+    {
+      "testo": "<|fontId: default|>Il presente contratto (di seguito, \"Contratto\") regola i **termini** e le **condizioni** tra $fornitore:denominazione$, codice fiscale $fornitore:codiceFiscale$, con sede in $fornitore:indirizzoCompleto$, e $cliente:denominazione$, **codice fiscale** $cliente:codiceFiscale$, con sede in $cliente:indirizzoCompleto$, per la fornitura e gestione di kit di biancheria da lavanderie industriali."
+    },
+    {
+      "testo": "^Omnis illo molestiae ut et amet **blanditiis** amet. Ea voluptas est nostrum saepe corrupti. Incidunt nobis quos voluptatem laboriosam excepturi sed. Deserunt exercitationem praesentium quasi. Ab blanditiis vero sit eveniet. Accusamus quae explicabo rerum rem corrupti placeat similique voluptatem. Non assumenda at voluptas deleniti ipsum numquam accusantium. Laudantium eum ut possimus ullam perferendis nemo. Facere distinctio earum quia. Unde rerum qui dolorum. Repellat esse veniam voluptatum dolores placeat et. Autem et labore provident non. Nihil dolore exercitationem vel hic dolorem voluptatem. Rerum quae natus quia consectetur eaque natus veritatis consequatur. Corporis magnam suscipit nihil autem natus. Quia libero et hic ipsam praesentium omnis aut esse.^"
+    },
+    {
+      "testo": "<|fontId: helvetica_10|>^Box della **denominazione** del cliente $cliente:denominazione$^"
+    },
+    {
+      "punti": [
+        {
+          "titolo": "1. OGGETTO DEL CONTRATTO",
+          "sottopunti": [
+            {
+              "titolo": "1.1. Servizio fornito da pincoPallino Joe srl",
+              "contenuto": [
+                "pincoPallino Joe si impegna a:",
+                "• Lanciare ",
+                "• Schivare ",
+                "• Piegarsi ",
+                "• Abbassarsi ",
+                "• Schivare "
+              ]
+            },
+            {
+              "titolo": "**1.3. Ordini**",
+              "contenuto": [
+                "Gli **ordini** possono essere caricati:",
+                "• Manualmente tramite lo store e-commerce pincoPallino Joe,",
+                "• Gli ordini devono rispettare i check-out"
+              ]
+            },
+            {
+              "titolo": "2.2. Il pagamento deve avvenire al momento dell'ordine tramite:",
+              "contenuto": [
+                "• Carta di credito",
+                "• SEPA (bonifico bancario)",
+                "• SDD"
+              ]
+            },
+            {
+              "titolo": "3.3. Consegne mancanti o ritardate",
+              "contenuto": [
+                "In caso di mancata consegna per cause imputabili al Cliente, la consegna sarà riprogrammata con addebito:",
+                "• Del costo della consegna “saltata”.",
+                "• Del costo della nuova consegna."
+              ]
+            },
+            {
+              "titolo": "7.1. Obblighi del Cliente",
+              "contenuto": [
+                "• Giocae a dodgeball"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
     "immagine": {
-      "path": "./logo-contratto.png",
+      "path": "./logo.png",
       "posizione": [
-        100,
-        100
+        0,
+        0
       ],
       "dimensioni": [
-        52.67,
-        17.81
+        40,
+        20
       ],
       "coeffDim": 0.042
-    },
-    "Punti": [
-      {
-        "titolo": "1. OGGETTO DEL CONTRATTO",
-        "Sottopunti": [
-          {
-            "titolo": "1.1. Servizio fornito da bnbkit srl",
-            "contenuto": "bnbkit si impegna a:\n• Noleggiare kit unico di biancheria al Cliente.\n• Garantire la movimentazione dei kit, consegnando kit puliti e ritirando kit sporchi secondo le modalità previste.\n• Monitorare i movimenti e il saldo kit tramite il portale cliente."
-          },
-          {
-            "titolo": "1.2. Movimentazione in kit unico",
-            "contenuto": "I kit sono movimentati esclusivamente in forma completa (sia per il ritiro dello sporco che per la consegna del pulito). Non sono accettati articoli sfusi."
-          },
-          {
-            "titolo": "1.3. Ordini",
-            "contenuto": "Gli **ordini** possono essere caricati:\n• Manualmente tramite lo store e-commerce bnbkit,\n• Automaticamente tramite integrazione con il Channel Manager.\n• Gli ordini devono rispettare i check-out, assicurando che il numero di kit consegnati corrisponda al numero di kit ritirati con una tolleranza di +/-1."
-          },
-          {
-            "titolo": "1.4. Scorte minime e gestione emergenze",
-            "contenuto": "Ogni letto deve disporre di tre kit:\n• Kit in uso.\n• Kit cambio.\n• Kit emergenza: fornito in fase di avviamento punto di consegna a titolo gratuito da bnbkit. Se utilizzato, il Cliente deve pagare il costo di noleggio per il reintegro.\n• Scorte eccessive non sono consentite."
-          },
-          {
-            "titolo": "1.5. Gestione kit smarriti",
-            "contenuto": "Qualora un kit non venga movimentato per due cicli consecutivi, sarà considerato smarrito e addebitato al Cliente al valore convenzionale di vendita."
-          },
-          {
-            "titolo": "1.6. Controllo qualità e articoli fallati",
-            "contenuto": "In caso di articoli fallati, il Cliente deve inserire il capo difettoso nell'apposito sacchetto fornito da bnbkit e utilizzare il medesimo articolo contenuto nel kit emergenza. Il rider provvederà al reintegro del kit emergenza con un articolo nuovo e al ritiro dell'articolo fallato."
-          }
-        ]
-      },
-      {
-        "titolo": "2. MODALITÀ DI PAGAMENTO",
-        "Sottopunti": [
-          {
-            "titolo": "2.1. Il Cliente è tenuto a pagare:",
-            "contenuto": "• Il costo del noleggio kit secondo le tariffe bnbkit\n• Eventuali costi aggiuntivi (consegna, reintegro, smarrimenti, ecc.)."
-          },
-          {
-            "titolo": "2.2. Il pagamento deve avvenire al momento dell'ordine tramite:",
-            "contenuto": "• Carta di credito\n• SEPA (bonifico bancario)\n• SDD"
-          }
-        ]
-      },
-      {
-        "titolo": "3. CONSEGNA E RITIRO",
-        "Sottopunti": [
-          {
-            "titolo": "3.1. Modalità di consegna e logistica",
-            "contenuto": "bnbkit utilizza un software di ottimizzazione logistica per calcolare i percorsi ottimali nel rispetto degli orari di consegna.\nLe consegne negli appartamenti sono effettuate nella fascia oraria 10:00-15:00. Per altre destinazioni, le consegne saranno effettuate senza vincoli di orario nella giornata programmata."
-          },
-          {
-            "titolo": "3.2. Accesso ai locali",
-            "contenuto": "Il Cliente è obbligato a rendere bnbkit autonomo nell'accesso ai locali (specifiche da definire)."
-          },
-          {
-            "titolo": "3.3. Consegne mancanti o ritardate",
-            "contenuto": "In caso di mancata consegna per cause imputabili al Cliente, la consegna sarà riprogrammata con addebito:\n• Del costo della consegna “saltata”.\n• Del costo della nuova consegna."
-          },
-          {
-            "titolo": "3.4. Completamento del servizio",
-            "contenuto": "Il servizio si considera completato al momento della consegna dei kit puliti."
-          }
-        ]
-      },
-      {
-        "titolo": "4. MONITORAGGIO E CONTROLLO",
-        "Sottopunti": [
-          {
-            "titolo": "4.1. Monitoraggio RFID",
-            "contenuto": "bnbkit monitora costantemente i movimenti dei kit attraverso il sistema Radio Frequency Identification RFID (ogni capo è dotato di chip)."
-          },
-          {
-            "titolo": "4.2. Articoli mancanti",
-            "contenuto": "Gli articoli mancanti saranno comunicati al Cliente. Se non restituiti al passaggio successivo, saranno considerati smarriti e addebitati al valore convenzionale di vendita."
-          }
-        ]
-      },
-      {
-        "titolo": "5. DURATA E RISOLUZIONE DEL CONTRATTO",
-        "Sottopunti": [
-          {
-            "titolo": "5.1. Durata",
-            "contenuto": "Il contratto ha durata di 12 mesi con rinnovo automatico salvo disdetta scritta con preavviso di 30 giorni."
-          },
-          {
-            "titolo": "5.2. Risoluzione",
-            "contenuto": "bnbkit potrà risolvere il contratto nei seguenti casi:\n• Mancato pagamento.\n• Violazione delle condizioni di gestione dei kit."
-          },
-          {
-            "titolo": "5.3. Restituzione kit in caso di disdetta",
-            "contenuto": "In caso di disdetta, il Cliente deve restituire i kit entro 30 giorni. Decorso tale termine, bnbkit considererà i kit smarriti e li addebiterà al valore convenzionale di vendita."
-          }
-        ]
-      },
-      {
-        "titolo": "6. CAMPIONATURA",
-        "Sottopunti": [
-          {
-            "titolo": "",
-            "contenuto": "6.1. I kit forniti per campionatura sono consegnati a titolo di visione e devono essere restituiti."
-          },
-          {
-            "titolo": "",
-            "contenuto": "6.2. In caso di mancata restituzione, bnbkit addebiterà il costo di noleggio o il valore convenzionale di vendita al Cliente."
-          }
-        ]
-      },
-      {
-        "titolo": "7. RESPONSABILITÀ DELLE PARTI",
-        "Sottopunti": [
-          {
-            "titolo": "7.1. Obblighi del Cliente",
-            "contenuto": "• Garantire l'accesso ai locali per le operazioni di consegna e ritiro.\n• Effettuare ordini in modo corretto e in conformità con i check-out.\n• Segnalare eventuali articoli fallati secondo le modalità previste.\n• Rispettare i termini di pagamento."
-          },
-          {
-            "titolo": "7.2. Obblighi di BNBKIT",
-            "contenuto": "• Garantire la consegna puntuale e il ritiro regolare dei kit.\n• Fornire supporto per eventuali problemi tecnici."
-          }
-        ]
-      },
-      {
-        "titolo": "8. FORO COMPETENTE",
-        "Sottopunti": [
-          {
-            "titolo": "",
-            "contenuto": "**Per ogni controversia derivante dal presente contratto, sarà competente il Foro di Genova.**"
-          }
-        ]
-      },
-      {
-        "titolo": "9. ACCETTAZIONE",
-        "Sottopunti": [
-          {
-            "titolo": "",
-            "contenuto": "Le Parti dichiarano di accettare **integralmente** i termini e le condizioni del presente contratto."
-          }
-        ]
-      },
-      {
-        "titolo": "10. TABELLA",
-        "Sottopunti": [
-          {
-            "titolo": "",
-            "contenuto": "$TABLE1$"
-          }
-        ]
-      },
-      {
-        "titolo": "11. TESTOBOX",
-        "Sottopunti": [
-          {
-            "titolo": "",
-            "contenuto": "^prova di testo dentro una **box** prova prova prova^"
-          }
-        ]
-      }
-    ]
+    }
+  },
+  {
+    "tabella": "TABLE1"
   }
+  ]
 }
 
 ````
