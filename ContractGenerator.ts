@@ -837,9 +837,15 @@ export class DocumentGenerator {
                 styles: {
                   ...tabData.config.styles,
                 },
-
+                didDrawCell: (data) => {
+                  this.xCursor = data.cursor.x;
+                  this.yCursor = data.cursor.y;
+                }
               });
-
+              finalCur = {
+                x: this.curX,
+                y: this.yNewLine
+              }
               break;
             //#region 'saltoRiga'
             case 'saltoRiga':

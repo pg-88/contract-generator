@@ -766,7 +766,14 @@ var DocumentGenerator = /** @class */ (function () {
                                                         (0, jspdf_autotable_1.default)(this_1.doc, __assign(__assign({}, tabData.config), { startY: this_1.curY, margin: {
                                                                 left: this_1.config.margini.sx,
                                                                 right: this_1.config.margini.dx
-                                                            }, styles: __assign({}, tabData.config.styles) }));
+                                                            }, styles: __assign({}, tabData.config.styles), didDrawCell: function (data) {
+                                                                _this.xCursor = data.cursor.x;
+                                                                _this.yCursor = data.cursor.y;
+                                                            } }));
+                                                        finalCur = {
+                                                            x: this_1.curX,
+                                                            y: this_1.yNewLine
+                                                        };
                                                         return [3 /*break*/, 9];
                                                     case 7:
                                                         rowsNumber = Number(block[key]);
