@@ -384,7 +384,6 @@ export class DocumentGenerator {
       //////////////////////////////////////////////////////////////////////////
       this.debugMargini();
     } catch (error) {
-      console.error(error);
       throw error;
     }
   }

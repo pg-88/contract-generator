@@ -1,6 +1,5 @@
 # Contract Generator
 - [Contract Generator](#contract-generator)
-  - [To Do:](#to-do)
   - [Descrizione](#descrizione)
   - [Funzionamento](#funzionamento)
   - [`DocumentParams`](#documentparams)
@@ -19,13 +18,6 @@
       - [Esempio file](#esempio-file)
       - [Sintassi per formattazione](#sintassi-per-formattazione)
 
-## To Do:
-- [ ] TABELLA: AGGIORNARE IL CURSORE QUANDO FINISCE LA TABELLA!!!
-- [ ] Sistemare allineamento testo tramite tag
-- [ ] Gestione degli errori, usando la libreria in un progetto express, gli errori bloccano il server
-- [ ] margini provoca errori se non vengono passati tutti i campi. Pensare di assegnare un valore di default
-- [ ] *Passare un offset orizzontale per i testi?*
-- [ ] Finire la documentazione 
 
 ## Descrizione
 
