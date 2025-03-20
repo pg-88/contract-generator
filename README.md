@@ -290,13 +290,15 @@ i tipi di contenuto possono essere:
 ----
 
 #### Sintassi per formattazione
-*ipotesi iniziale*
-- Tag per lo stile: usare il carattere `<| |>` seguito da una chiave e il valore
+
+usare il carattere `<| |>` seguito da una chiave e il valore
+- Tag per lo stile: 
   - `<|font: times|>` setta il font a Times new roman
   - `<|size: 9|>` setta la dimensione del font
   - `<|style: bold|>` setta lo stile
-- Tag per il posizionamento usando i caratteri `<| |>`
-  - `<|vAlign: center|>` centra il testo verticalmente
-  - `<|hAlign: center|>` centra il testo orizzontalmente
+- **da implementare**~~Tag per il posizionamento~~ 
+  ~~- `<|vAlign: center|>` centra il testo verticalmente~~
+  ~~- `<|hAlign: center|>` centra il testo orizzontalmente~~
+  
 Quanto non vengono passati tag, la formattazione diventa quella contenuta in fontDefault ( vedi [impostazioni pagina](#impostazioni-pagina)) e il posizionamento viene dettato dalla posizione del cursore.
 

@@ -619,7 +619,7 @@ export class DocumentGenerator {
     let textToWrite = write.content;
     this.setupText(write.fontId);
     const option: TextOptionsLight = {
-      align: write.hAlign ? write.hAlign : null,
+      // align: write.hAlign ? write.hAlign : null,
       baseline: write.vAlign ? write.vAlign : null
     };
     let boxedText = textToWrite.match(/^\^.*\^$/);
