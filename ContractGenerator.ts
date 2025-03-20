@@ -108,9 +108,9 @@ export interface DocumentFont {
 
 
 export interface ImageParams {
-  path: string; 
-  posizione?: [number, number]; 
-  dimensioni?: [number, number]; 
+  path: string;
+  posizione?: [number, number];
+  dimensioni?: [number, number];
   coeffDim?: number;
 }
 
@@ -337,6 +337,12 @@ export class DocumentGenerator {
       const data = await fs.readFile(this.inputConfig, 'utf8');
       this.template = JSON.parse(data) as DocumentConfig;
       this.config = this.template.impostazioniPagina;
+      this.config.margini = {
+        sx: this.template.impostazioniPagina.margini?.sx ? this.template.impostazioniPagina.margini.sx : 8,
+        dx: this.template.impostazioniPagina.margini?.dx ? this.template.impostazioniPagina.margini.dx : 8,
+        alto: this.template.impostazioniPagina.margini?.alto ? this.template.impostazioniPagina.margini.alto : 8,
+        basso: this.template.impostazioniPagina.margini?.basso ? this.template.impostazioniPagina.margini.basso : 8,
+      }
       this.contenuti = this.template.contenuti;
       this.configLoaded = true;
     } catch (error) {
@@ -359,6 +365,7 @@ export class DocumentGenerator {
       const margins = this.config.margini;
       this.curX = margins.sx ? margins.sx : 10;
       this.curY = margins.alto ? margins.alto : 10;
+      console.log("Init cursor: ", this.curX, this.curY);
       const fontList = this.doc.getFontList();
       for (const font of this.config.fonts) {
         // console.log("Font List: ", fontList, " Font selected ", font.nome)
@@ -680,182 +687,189 @@ export class DocumentGenerator {
 
   //#region generateDocument
   public async generateDocument(params: DocumentParams) {
-    await this.loadConfig(); // read the config json file  
-    await this.initDoc(); // prepares the doc obj and the cursor
+    try {
 
-    // Parse contents
-    for (const block of this.contenuti) {
-      // console.log("blocco", block);
-      let finalCur = { x: NaN, y: NaN };
-      for (const key of Object.keys(block)) {
-        const [blockX, blockY] = [this.curX, this.curY];
-        switch (key) {
-          //#region 'testo'
-          case 'testo':
-            // this.debugCursor('blue', "BLOCK TESTO");
-            let testo = block[key];
-            if (Array.isArray(testo)) {
-              testo.forEach((riga, i, arr) => {
-                let tmpCur = this.writeTextSection(riga, params, blockX);
-                if (tmpCur.x > finalCur.x || Number.isNaN(finalCur.x))
-                  finalCur.x = Number(tmpCur.x);
-                if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
-                  finalCur.y = Number(tmpCur.y);
-                if (i < arr.length - 1) this.yCursor = this.yNewLine;
-                // this.debugCursor('#FA8072');
-              });
-            } else {
-              finalCur = this.writeTextSection(testo, params, blockX);
-            }
-            // this.yCursor = this.curY + this.config.staccoriga;
-            break;
-          //#region 'testoBox'
-          case 'testoBox':
-            let testoBox = block[key];
-            if (Array.isArray(testoBox)) {
-              let tmpCur = {
-                x: NaN,
-                y: NaN
+
+      await this.loadConfig(); // read the config json file  
+      await this.initDoc(); // prepares the doc obj and the cursor
+
+      // Parse contents
+      for (const block of this.contenuti) {
+        // console.log("blocco", block);
+        let finalCur = { x: NaN, y: NaN };
+        for (const key of Object.keys(block)) {
+          const [blockX, blockY] = [this.curX, this.curY];
+          switch (key) {
+            //#region 'testo'
+            case 'testo':
+              // this.debugCursor('blue', "BLOCK TESTO");
+              let testo = block[key];
+              if (Array.isArray(testo)) {
+                testo.forEach((riga, i, arr) => {
+                  let tmpCur = this.writeTextSection(riga, params, blockX);
+                  if (tmpCur.x > finalCur.x || Number.isNaN(finalCur.x))
+                    finalCur.x = Number(tmpCur.x);
+                  if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
+                    finalCur.y = Number(tmpCur.y);
+                  if (i < arr.length - 1) this.yCursor = this.yNewLine;
+                  // this.debugCursor('#FA8072');
+                });
+              } else {
+                finalCur = this.writeTextSection(testo, params, blockX);
               }
-              testoBox.forEach((riga: string, i: number, arr) => {
-                tmpCur = this.writeTextSection(riga, params, blockX);
-                if (tmpCur.x > finalCur.x || Number.isNaN(finalCur.x))
-                  finalCur.x = Number(tmpCur.x);
-                if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
-                  finalCur.y = Number(tmpCur.y);
-                if (i < arr.length - 1) this.yCursor = this.yNewLine;
-                // this.debugCursor('#FA8072');
-              });
-              const [x, y, w, h] = [
-                blockX - this.config.box.padding * 0.5,
-                blockY - (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4 - (this.config.box.padding * 0.5),
-                finalCur.x - blockX + this.config.box.padding,
-                finalCur.y - blockY + this.config.box.padding + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4,
-                this.config.box.raggio,
-                this.config.box.raggio
-              ];
+              // this.yCursor = this.curY + this.config.staccoriga;
+              break;
+            //#region 'testoBox'
+            case 'testoBox':
+              let testoBox = block[key];
+              if (Array.isArray(testoBox)) {
+                let tmpCur = {
+                  x: NaN,
+                  y: NaN
+                }
+                testoBox.forEach((riga: string, i: number, arr) => {
+                  tmpCur = this.writeTextSection(riga, params, blockX);
+                  if (tmpCur.x > finalCur.x || Number.isNaN(finalCur.x))
+                    finalCur.x = Number(tmpCur.x);
+                  if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
+                    finalCur.y = Number(tmpCur.y);
+                  if (i < arr.length - 1) this.yCursor = this.yNewLine;
+                  // this.debugCursor('#FA8072');
+                });
+                const [x, y, w, h] = [
+                  blockX - this.config.box.padding * 0.5,
+                  blockY - (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4 - (this.config.box.padding * 0.5),
+                  finalCur.x - blockX + this.config.box.padding,
+                  finalCur.y - blockY + this.config.box.padding + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4,
+                  this.config.box.raggio,
+                  this.config.box.raggio
+                ];
 
-              this.doc.setDrawColor(this.config.box.lineColor);
-              this.doc.setLineWidth(this.config.box.lineWidth);
-              this.doc.setFillColor(this.config.box.background);
-              this.doc.roundedRect(
-                x,
-                y,
-                w,
-                h,
-                this.config.box.raggio,
-                this.config.box.raggio,
-                "FD"
-              );
-              this.curX = blockX;
-              this.curY = blockY;
-              testoBox.forEach((riga: string, i: number, arr) => {
-                tmpCur = this.writeTextSection(riga, params, blockX);
-                if (tmpCur.x > finalCur.x || Number.isNaN(finalCur.x))
-                  finalCur.x = Number(tmpCur.x);
-                if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
-                  finalCur.y = Number(tmpCur.y);
-                if (i < arr.length - 1) this.yCursor = this.yNewLine;
-                // this.debugCursor('#FA8072');
-              });
+                this.doc.setDrawColor(this.config.box.lineColor);
+                this.doc.setLineWidth(this.config.box.lineWidth);
+                this.doc.setFillColor(this.config.box.background);
+                this.doc.roundedRect(
+                  x,
+                  y,
+                  w,
+                  h,
+                  this.config.box.raggio,
+                  this.config.box.raggio,
+                  "FD"
+                );
+                this.curX = blockX;
+                this.curY = blockY;
+                testoBox.forEach((riga: string, i: number, arr) => {
+                  tmpCur = this.writeTextSection(riga, params, blockX);
+                  if (tmpCur.x > finalCur.x || Number.isNaN(finalCur.x))
+                    finalCur.x = Number(tmpCur.x);
+                  if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
+                    finalCur.y = Number(tmpCur.y);
+                  if (i < arr.length - 1) this.yCursor = this.yNewLine;
+                  // this.debugCursor('#FA8072');
+                });
 
 
-            } else {
-              console.warn("testoBox value must be an array of strings");
-            }
-            // this.yCursor = this.curY + this.config.staccoriga;
-            break;
-          //#region 'Punti'
-          case 'punti':
-            const punti = block[key] as Elenco[];
+              } else {
+                console.warn("testoBox value must be an array of strings");
+              }
+              // this.yCursor = this.curY + this.config.staccoriga;
+              break;
+            //#region 'Punti'
+            case 'punti':
+              const punti = block[key] as Elenco[];
 
-            for (const section of punti) {
-              // console.log("Section Title", section.titolo);
-              finalCur = this.writeTextSection(section.titolo, params);
-              this.curY += this.config.staccoriga;
-              let tmpCur = { x: finalCur.x, y: finalCur.y };
-              for (const point of section.sottopunti) {
-                // console.log("Point title:", point.titolo, " point content: ", point.contenuto);
-                // this.curX = this.config.margini.sx + this.config.rientro;
-                const offset = this.config.margini.sx + this.config.rientro;
-                tmpCur = this.writeTextSection(point.titolo, params, offset);
-                this.curY = this.yNewLine;
-                point.contenuto?.forEach(line => {
-                  const offset = this.config.margini.sx + this.config.rientro * 2;
-                  tmpCur = this.writeTextSection(line, params, offset);
+              for (const section of punti) {
+                // console.log("Section Title", section.titolo);
+                finalCur = this.writeTextSection(section.titolo, params);
+                this.curY += this.config.staccoriga;
+                let tmpCur = { x: finalCur.x, y: finalCur.y };
+                for (const point of section.sottopunti) {
+                  // console.log("Point title:", point.titolo, " point content: ", point.contenuto);
+                  // this.curX = this.config.margini.sx + this.config.rientro;
+                  const offset = this.config.margini.sx + this.config.rientro;
+                  tmpCur = this.writeTextSection(point.titolo, params, offset);
                   this.curY = this.yNewLine;
-                })
-                this.yCursor = this.curY + this.config.staccoriga;
+                  point.contenuto?.forEach(line => {
+                    const offset = this.config.margini.sx + this.config.rientro * 2;
+                    tmpCur = this.writeTextSection(line, params, offset);
+                    this.curY = this.yNewLine;
+                  })
+                  this.yCursor = this.curY + this.config.staccoriga;
+                }
+                if (tmpCur.x > finalCur.x || Number.isNaN(finalCur.x))
+                  finalCur.x = Number(tmpCur.x);
+                if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
+                  finalCur.y = Number(tmpCur.y);
               }
+              break;
+            //#region 'immagine'
+            case 'immagine':
+              let imgParam = block[key] as ImageParams
+              let tmpCur = await this.insertImage(imgParam);
               if (tmpCur.x > finalCur.x || Number.isNaN(finalCur.x))
                 finalCur.x = Number(tmpCur.x);
               if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
                 finalCur.y = Number(tmpCur.y);
-            }
-            break;
-          //#region 'immagine'
-          case 'immagine':
-            let imgParam = block[key] as ImageParams
-            let tmpCur = await this.insertImage(imgParam);
-            if (tmpCur.x > finalCur.x || Number.isNaN(finalCur.x))
-              finalCur.x = Number(tmpCur.x);
-            if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
-              finalCur.y = Number(tmpCur.y);
-            break;
-          //#region 'tabella'
-          case 'tabella':
-            const tabData = params.dynamicElements[block[key]];
-            // console.log("Dati tabella: ", tabData, "\n$$$$$$$font", this.doc.getFont().fontName);
-            if (!tabData.config.styles) {
-              tabData.config.styles = {
-                font: this.doc.getFont().fontName,
-                fontSize: this.doc.getFontSize(),
-                textColor: this.doc.getTextColor(),
+              break;
+            //#region 'tabella'
+            case 'tabella':
+              const tabData = params.dynamicElements[block[key]];
+              // console.log("Dati tabella: ", tabData, "\n$$$$$$$font", this.doc.getFont().fontName);
+              if (!tabData.config.styles) {
+                tabData.config.styles = {
+                  font: this.doc.getFont().fontName,
+                  fontSize: this.doc.getFontSize(),
+                  textColor: this.doc.getTextColor(),
+                }
+              } else if (!tabData.config.styles.font) {
+                tabData.config.styles.font = this.doc.getFont().fontName;
+                tabData.config.styles.fontSize = this.doc.getFontSize();
+                tabData.config.styles.textColor = this.doc.getTextColor();
               }
-            } else if (!tabData.config.styles.font) {
-              tabData.config.styles.font = this.doc.getFont().fontName;
-              tabData.config.styles.fontSize = this.doc.getFontSize();
-              tabData.config.styles.textColor = this.doc.getTextColor();
-            }
-            autotable(this.doc, {
-              ...tabData.config as UserOptions,
-              startY: this.curY,
-              margin: {
-                left: this.config.margini.sx,
-                right: this.config.margini.dx
-              },
-              styles: {
-                ...tabData.config.styles,
-              },
-              
-            });
+              autotable(this.doc, {
+                ...tabData.config as UserOptions,
+                startY: this.curY,
+                margin: {
+                  left: this.config.margini.sx,
+                  right: this.config.margini.dx
+                },
+                styles: {
+                  ...tabData.config.styles,
+                },
 
-            break;
-          //#region 'saltoRiga'
-          case 'saltoRiga':
-            const rowsNumber = Number(block[key]);
-            finalCur.y = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4 * rowsNumber;
-            break;
-          //#endregion
-          default:
-            break;
+              });
+
+              break;
+            //#region 'saltoRiga'
+            case 'saltoRiga':
+              const rowsNumber = Number(block[key]);
+              finalCur.y = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4 * rowsNumber;
+              break;
+            //#endregion
+            default:
+              break;
+          }
+          if (!Number.isNaN(finalCur.x))
+            this.xCursor = finalCur.x;
+          if (!Number.isNaN(blockY))
+            this.yCursor = blockY;
         }
-        if (!Number.isNaN(finalCur.x))
-          this.xCursor = finalCur.x;
-        if (!Number.isNaN(blockY))
-          this.yCursor = blockY;
+        if (!Number.isNaN(finalCur.y))
+          this.yCursor = finalCur.y;
+        this.yCursor = this.yNewLine + this.config.staccoriga;
+        this.curX = this.config.margini.sx;
+      };
+      if (params.numPagina) {
+        this.writePageNumber(params.numPagina.label, params.numPagina.totPages, params.numPagina.fontId);
       }
-      if (!Number.isNaN(finalCur.y))
-        this.yCursor = finalCur.y;
-      this.yCursor = this.yNewLine + this.config.staccoriga;
-      this.curX = this.config.margini.sx;
-    };
-    if (params.numPagina) {
-      this.writePageNumber(params.numPagina.label, params.numPagina.totPages, params.numPagina.fontId);
+      this.doc.save(params.nomeFile);
+      if (params.allegaDocDopo || params.allegaDocPrima)
+        await this.mergeDocument(params);
+
+    } catch (error) {
+      console.error(error);
     }
-    this.doc.save(params.nomeFile);
-    if (params.allegaDocDopo || params.allegaDocPrima)
-      await this.mergeDocument(params);
   }
   //#endregion
 
