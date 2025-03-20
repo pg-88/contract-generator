@@ -826,7 +826,8 @@ export class DocumentGenerator {
               },
               styles: {
                 ...tabData.config.styles,
-              }
+              },
+              
             });
 
             break;

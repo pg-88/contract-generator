@@ -20,6 +20,8 @@
       - [Sintassi per formattazione](#sintassi-per-formattazione)
 
 ## To Do:
+- [ ] TABELLA: AGGIORNARE IL CURSORE QUANDO FINISCE LA TABELLA!!!
+- [ ] Sistemare allineamento testo tramite tag
 - [ ] Gestione degli errori, usando la libreria in un progetto express, gli errori bloccano il server
 - [ ] margini provoca errori se non vengono passati tutti i campi. Pensare di assegnare un valore di default
 - [ ] *Passare un offset orizzontale per i testi?*
@@ -293,7 +295,7 @@ i tipi di contenuto possono essere:
   - `<|font: times|>` setta il font a Times new roman
   - `<|size: 9|>` setta la dimensione del font
   - `<|style: bold|>` setta lo stile
-- Tag per il posizionamento usando i caratteri `<<>>`
+- Tag per il posizionamento usando i caratteri `<| |>`
   - `<|vAlign: center|>` centra il testo verticalmente
   - `<|hAlign: center|>` centra il testo orizzontalmente
 Quanto non vengono passati tag, la formattazione diventa quella contenuta in fontDefault ( vedi [impostazioni pagina](#impostazioni-pagina)) e il posizionamento viene dettato dalla posizione del cursore.
