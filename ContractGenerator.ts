@@ -149,6 +149,9 @@ interface FormattedText {
   vAlign?: VAlign;
   maxWidth?: number;
   riportaCursore?: 'fianco' | 'sotto';
+  offsetX?: number;
+  offsetY?: number;
+  centra?: boolean;
 }
 
 interface SectionsText {
@@ -504,6 +507,27 @@ export class DocumentGenerator {
             case "vAlign":
               formattedText.vAlign = value as VAlign;
               break;
+            case "offsetX":
+              const offX = Number(value);
+              if (Number.isNaN(offX)) throw new Error("OffsetX is not a number");
+              formattedText.offsetX = offX
+              break;
+            case "offsetY":
+              const offY = Number(value);
+              if (Number.isNaN(offY)) throw new Error("OffsetY is not a number");
+              formattedText.offsetY = offY;
+              console.log("offset")
+              break;
+            case "allinea":
+              if (value === 'centra') {
+                this.xCursor = this.doc.internal.pageSize.getWidth() / 2;
+                // formattedText.hAlign = 'center';
+                formattedText.centra = true;
+              } /* else if(value === 'destra') {
+                
+              } */ else {
+                console.warn("invalid value passed to 'allinea'");
+              }
           }
         }
       }
@@ -527,6 +551,7 @@ export class DocumentGenerator {
     } else {
       while (index < content.length) {
         for (const match of matches) {
+          console.log("match of matches", match);
           if (index !== match['index']) {
             sections.push({
               text: content.substring(index, match['index']),
@@ -536,11 +561,12 @@ export class DocumentGenerator {
             });
           }
           sections.push({
-            text: content.substring(match['index'], match['index'] + match[0].length + 1),
+            text: content.substring(match['index'], match['index'] + match[0].length ),
             type: 'bold',
             start: match['index'],
             end: match['index'] + match[0].length
           });
+          console.log("sections", sections);
           index = match['index'] + match[0].length;
         }
         sections.push({
@@ -634,7 +660,13 @@ export class DocumentGenerator {
         let text = s.text.replace(/\*\*/g, '');
         this.doc.setFont(this.doc.getFont().fontName, s.type);
         // this.xCursor = startCur.x;
-        finalCur = this.writeTextInLine(text, maxWidth, option, offsetX, offsetY);
+        // update the value of offset if there is something returned by parseText
+        const [offX, offY] = [
+          offsetX + (write.offsetX ? write.offsetX : 0),
+          offsetY + (write.offsetY ? write.offsetY : 0),
+        ];
+        console.log("text to write: ", text);
+        finalCur = this.writeTextInLine(text, maxWidth, option, offX, offY, write.centra);
         // this.debugCursor('#aa00aa', "finalCur");
       }
     }
@@ -651,11 +683,15 @@ export class DocumentGenerator {
     maxWidth: number,
     option: TextOptionsLight,
     offsetX?: number,
-    offsetY?: number
+    offsetY?: number,
+    centra?: boolean
   ): { x: number, y: number } {
     let words = text.split(" ");
     if (offsetX && this.curX < offsetX) {
       this.xCursor = offsetX;
+    }
+    if (offsetY/*&& this.curY < offsetY*/) {
+      this.yCursor = this.curY + offsetY;
     }
     let spaceWidth = this.doc.getTextWidth(" ");
     let lineWidth = 0;
@@ -664,7 +700,6 @@ export class DocumentGenerator {
     for (let word of words) {
       let wordWidth = this.doc.getTextWidth(word);
       if (lineWidth + wordWidth >= maxWidth || this.curX + wordWidth >= netWidth) {
-        // this.debugCursor("pink", `lineWidth: ${(lineWidth + wordWidth).toFixed(3)}; maxWidth: ${maxWidth.toFixed(3)}`);
         // re-set x-cursor
         this.curX = this.config.margini.sx;
         if (offsetX && this.curX < offsetX) {
@@ -672,7 +707,6 @@ export class DocumentGenerator {
         }
         this.yCursor = this.yNewLine;
         lineWidth = 0;
-        // this.debugCursor("#fff71a", "newLine");
       }
 
       if (word !== '') {
@@ -702,7 +736,7 @@ export class DocumentGenerator {
           switch (key) {
             //#region 'testo'
             case 'testo':
-              // this.debugCursor('blue', "BLOCK TESTO");
+              this.debugCursor('blue', "BLOCK TESTO");
               let testo = block[key];
               if (Array.isArray(testo)) {
                 testo.forEach((riga, i, arr) => {
@@ -787,12 +821,12 @@ export class DocumentGenerator {
                 for (const point of section.sottopunti) {
                   // console.log("Point title:", point.titolo, " point content: ", point.contenuto);
                   // this.curX = this.config.margini.sx + this.config.rientro;
-                  const offset = this.config.margini.sx + this.config.rientro;
-                  tmpCur = this.writeTextSection(point.titolo, params, offset);
+                  const offsetX = this.config.margini.sx + this.config.rientro;
+                  tmpCur = this.writeTextSection(point.titolo, params, offsetX, undefined);
                   this.curY = this.yNewLine;
                   point.contenuto?.forEach(line => {
-                    const offset = this.config.margini.sx + this.config.rientro * 2;
-                    tmpCur = this.writeTextSection(line, params, offset);
+                    const offsetX = this.config.margini.sx + this.config.rientro * 2;
+                    tmpCur = this.writeTextSection(line, params, offsetX, undefined);
                     this.curY = this.yNewLine;
                   })
                   this.yCursor = this.curY + this.config.staccoriga;

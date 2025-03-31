@@ -440,6 +440,30 @@ var DocumentGenerator = /** @class */ (function () {
                         case "vAlign":
                             formattedText.vAlign = value;
                             break;
+                        case "offsetX":
+                            var offX = Number(value);
+                            if (Number.isNaN(offX))
+                                throw new Error("OffsetX is not a number");
+                            formattedText.offsetX = offX;
+                            break;
+                        case "offsetY":
+                            var offY = Number(value);
+                            if (Number.isNaN(offY))
+                                throw new Error("OffsetY is not a number");
+                            formattedText.offsetY = offY;
+                            console.log("offset");
+                            break;
+                        case "allinea":
+                            if (value === 'centra') {
+                                this.xCursor = this.doc.internal.pageSize.getWidth() / 2;
+                                // formattedText.hAlign = 'center';
+                                formattedText.centra = true;
+                            } /* else if(value === 'destra') {
+                              
+                            } */
+                            else {
+                                console.warn("invalid value passed to 'allinea'");
+                            }
                     }
                 }
             }
@@ -463,6 +487,7 @@ var DocumentGenerator = /** @class */ (function () {
             while (index < content.length) {
                 for (var _i = 0, matches_1 = matches; _i < matches_1.length; _i++) {
                     var match = matches_1[_i];
+                    console.log("match of matches", match);
                     if (index !== match['index']) {
                         sections.push({
                             text: content.substring(index, match['index']),
@@ -472,11 +497,12 @@ var DocumentGenerator = /** @class */ (function () {
                         });
                     }
                     sections.push({
-                        text: content.substring(match['index'], match['index'] + match[0].length + 1),
+                        text: content.substring(match['index'], match['index'] + match[0].length),
                         type: 'bold',
                         start: match['index'],
                         end: match['index'] + match[0].length
                     });
+                    console.log("sections", sections);
                     index = match['index'] + match[0].length;
                 }
                 sections.push({
@@ -544,7 +570,7 @@ var DocumentGenerator = /** @class */ (function () {
         var textToWrite = write.content;
         this.setupText(write.fontId);
         var option = {
-            align: write.hAlign ? write.hAlign : null,
+            // align: write.hAlign ? write.hAlign : null,
             baseline: write.vAlign ? write.vAlign : null
         };
         var boxedText = textToWrite.match(/^\^.*\^$/);
@@ -561,7 +587,13 @@ var DocumentGenerator = /** @class */ (function () {
                 var text = s.text.replace(/\*\*/g, '');
                 this.doc.setFont(this.doc.getFont().fontName, s.type);
                 // this.xCursor = startCur.x;
-                finalCur = this.writeTextInLine(text, maxWidth, option, offsetX, offsetY);
+                // update the value of offset if there is something returned by parseText
+                var _a = [
+                    offsetX + (write.offsetX ? write.offsetX : 0),
+                    offsetY + (write.offsetY ? write.offsetY : 0),
+                ], offX = _a[0], offY = _a[1];
+                console.log("text to write: ", text);
+                finalCur = this.writeTextInLine(text, maxWidth, option, offX, offY, write.centra);
                 // this.debugCursor('#aa00aa', "finalCur");
             }
         }
@@ -572,10 +604,13 @@ var DocumentGenerator = /** @class */ (function () {
     };
     //#endregion
     //#region writeTextInLine
-    DocumentGenerator.prototype.writeTextInLine = function (text, maxWidth, option, offsetX, offsetY) {
+    DocumentGenerator.prototype.writeTextInLine = function (text, maxWidth, option, offsetX, offsetY, centra) {
         var words = text.split(" ");
         if (offsetX && this.curX < offsetX) {
             this.xCursor = offsetX;
+        }
+        if (offsetY /*&& this.curY < offsetY*/) {
+            this.yCursor = this.curY + offsetY;
         }
         var spaceWidth = this.doc.getTextWidth(" ");
         var lineWidth = 0;
@@ -584,7 +619,6 @@ var DocumentGenerator = /** @class */ (function () {
             var word = words_1[_i];
             var wordWidth = this.doc.getTextWidth(word);
             if (lineWidth + wordWidth >= maxWidth || this.curX + wordWidth >= netWidth) {
-                // this.debugCursor("pink", `lineWidth: ${(lineWidth + wordWidth).toFixed(3)}; maxWidth: ${maxWidth.toFixed(3)}`);
                 // re-set x-cursor
                 this.curX = this.config.margini.sx;
                 if (offsetX && this.curX < offsetX) {
@@ -592,7 +626,6 @@ var DocumentGenerator = /** @class */ (function () {
                 }
                 this.yCursor = this.yNewLine;
                 lineWidth = 0;
-                // this.debugCursor("#fff71a", "newLine");
             }
             if (word !== '') {
                 this.doc.text(word, this.curX, this.curY, option);
@@ -642,6 +675,7 @@ var DocumentGenerator = /** @class */ (function () {
                                                         }
                                                         return [3 /*break*/, 8];
                                                     case 1:
+                                                        this_1.debugCursor('blue', "BLOCK TESTO");
                                                         testo = block[key];
                                                         if (Array.isArray(testo)) {
                                                             testo.forEach(function (riga, i, arr) {
@@ -718,12 +752,12 @@ var DocumentGenerator = /** @class */ (function () {
                                                                 var point = _o[_m];
                                                                 // console.log("Point title:", point.titolo, " point content: ", point.contenuto);
                                                                 // this.curX = this.config.margini.sx + this.config.rientro;
-                                                                var offset = this_1.config.margini.sx + this_1.config.rientro;
-                                                                tmpCur_2 = this_1.writeTextSection(point.titolo, params, offset);
+                                                                var offsetX = this_1.config.margini.sx + this_1.config.rientro;
+                                                                tmpCur_2 = this_1.writeTextSection(point.titolo, params, offsetX, undefined);
                                                                 this_1.curY = this_1.yNewLine;
                                                                 (_b = point.contenuto) === null || _b === void 0 ? void 0 : _b.forEach(function (line) {
-                                                                    var offset = _this.config.margini.sx + _this.config.rientro * 2;
-                                                                    tmpCur_2 = _this.writeTextSection(line, params, offset);
+                                                                    var offsetX = _this.config.margini.sx + _this.config.rientro * 2;
+                                                                    tmpCur_2 = _this.writeTextSection(line, params, offsetX, undefined);
                                                                     _this.curY = _this.yNewLine;
                                                                 });
                                                                 this_1.yCursor = this_1.curY + this_1.config.staccoriga;

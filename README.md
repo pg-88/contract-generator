@@ -20,7 +20,7 @@
       - [Sintassi per formattazione](#sintassi-per-formattazione)
 
 ## To Do:
-- [ ] TABELLA: AGGIORNARE IL CURSORE QUANDO FINISCE LA TABELLA!!!
+- [x] TABELLA: AGGIORNARE IL CURSORE QUANDO FINISCE LA TABELLA!!!
 - [ ] Sistemare allineamento testo tramite tag
 - [ ] Gestione degli errori, usando la libreria in un progetto express, gli errori bloccano il server
 - [ ] margini provoca errori se non vengono passati tutti i campi. Pensare di assegnare un valore di default
@@ -29,12 +29,12 @@
 
 ## Descrizione
 
-Libreria che genera pdf con la possibilità di inserire testi, immagini, elenchi, ~~tabelle~~ 
+Libreria che genera pdf con la possibilità di inserire testi, immagini, elenchi, tabelle
 
 ## Funzionamento
 
 I dati che vanno a generare il documento arrivano da due oggetti: `DocumentParams` e `DocumentConfig`. 
-- `DocumentConfig` costituisce lo scheletro rigido del documento e da quindi la struttura di base definendo la posizione e gli stili degli elementi nel pdf
+- `DocumentConfig` costituisce lo scheletro rigido del documento e fornisce quindi la struttura di base definendo la posizione e gli stili degli elementi nel pdf
 - `DocumentParams` viene passato dinamicamente ogni volta che si genera un documento e contiene i dati variabili come nomi, date, dati contenuti nelle tabelle ecc..
 
 
@@ -296,6 +296,9 @@ usare il carattere `<| |>` seguito da una chiave e il valore
   - `<|font: times|>` setta il font a Times new roman
   - `<|size: 9|>` setta la dimensione del font
   - `<|style: bold|>` setta lo stile
+  - `<|offsetX: 42|>` impone un incremento orizzontale del cursore per avere uno stacco tra gli elementi di testo
+  - `<|offsetY: 42|>` impone un incremento verticale del cursore per avere uno stacco tra gli elementi di testo
+
 - **da implementare**~~Tag per il posizionamento~~ 
   ~~- `<|vAlign: center|>` centra il testo verticalmente~~
   ~~- `<|hAlign: center|>` centra il testo orizzontalmente~~
