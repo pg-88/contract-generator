@@ -196,8 +196,9 @@ export class DocumentGenerator {
 
 
   //#region setter
-  private set yCursor(yPosition: number) {
+  private set yCursor(param: {yPosition: number, offsetX?: number}) {
     // this.debugCursor('#DC143C')
+    const yPosition = param.yPosition;
     const maxY = this.doc.internal.pageSize.getHeight() - this.config.margini.basso;
     if (
       yPosition >= this.config.margini.alto &&
@@ -209,6 +210,9 @@ export class DocumentGenerator {
       this.doc.addPage();
       this.curY = this.config.margini.alto;
       this.curX = this.config.margini.sx;
+      if (param.offsetX) {
+        this.curX += param.offsetX;
+      }
     } else {
       throw new Error(`${yPosition} is not a valid position for y coordinate`);
     }
@@ -224,7 +228,7 @@ export class DocumentGenerator {
       this.curX = xPosition;
     } else if (xPosition > maxX) {
       console.log("new line");
-      this.yCursor = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4;
+      this.yCursor = {yPosition: (this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4)};
       this.curX = this.config.margini.sx;
     } else {
       throw new Error(`${xPosition} is not a valid position for x coordinate`);
@@ -233,7 +237,7 @@ export class DocumentGenerator {
   //#endregion
 
   /**
-   * # get the position of the cursor in a new line below the actual.
+   * get the position of the cursor in a new line below the actual.
    */
   get yNewLine() {
     const newY = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4
@@ -466,7 +470,7 @@ export class DocumentGenerator {
         startY = this.curY + imgParam.posizione[1];
       }
       this.doc.addImage(base64Image, format, startX, startY, imgParam.dimensioni[0], imgParam.dimensioni[1]);
-      this.yCursor = startY + imgParam.dimensioni[1];
+      this.yCursor = {yPosition: (startY + imgParam.dimensioni[1])};
       this.xCursor = this.curX + imgParam.dimensioni[0];
       //this.xCursor = this.curX + startX + imgParam.dimensioni[0];
       // this.debugCursor('#2fff00', 'imageEnd');
@@ -618,13 +622,13 @@ export class DocumentGenerator {
     this.doc.roundedRect(x, y, w, h, r, r, 'FD');
 
     this.xCursor = txtCur.x;
-    this.yCursor = txtCur.y;
+    this.yCursor = {yPosition: txtCur.y};
     for (const s of section) {
       let text = s.text.replace(/\*\*/g, '');
       this.doc.setFont(this.doc.getFont().fontName, s.type);
       endCur = this.writeTextInLine(text, maxWidth, option);
     }
-    this.yCursor = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72 * 25.4);
+    this.yCursor = {yPosition: this.curY + (this.doc.getFontSize() * this.config.interlinea / 72 * 25.4)};
     return endCur;
   }
   //#endregion
@@ -688,8 +692,8 @@ export class DocumentGenerator {
     if (offsetX && this.curX < offsetX) {
       this.xCursor = offsetX;
     }
-    if (offsetY/*&& this.curY < offsetY*/) {
-      this.yCursor = this.curY + offsetY;
+    if (offsetY && this.curY < offsetY) {
+      this.yCursor = {yPosition: this.curY + offsetY, offsetX: offsetX};
     }
     let spaceWidth = this.doc.getTextWidth(" ");
     let lineWidth = 0;
@@ -700,10 +704,10 @@ export class DocumentGenerator {
       if (lineWidth + wordWidth >= maxWidth || this.curX + wordWidth >= netWidth) {
         // re-set x-cursor
         this.curX = this.config.margini.sx;
+        this.yCursor = { yPosition: this.yNewLine, offsetX: offsetX };
         if (offsetX && this.curX < offsetX) {
           this.xCursor = offsetX;
         }
-        this.yCursor = this.yNewLine;
         lineWidth = 0;
       }
 
@@ -741,7 +745,7 @@ export class DocumentGenerator {
                     finalCur.x = Number(tmpCur.x);
                   if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
                     finalCur.y = Number(tmpCur.y);
-                  if (i < arr.length - 1) this.yCursor = this.yNewLine;
+                  if (i < arr.length - 1) this.yCursor = {yPosition: this.yNewLine, offsetX: blockX};
                 });
               } else {
                 finalCur = this.writeTextSection(testo, params, blockX);
@@ -761,7 +765,7 @@ export class DocumentGenerator {
                     finalCur.x = Number(tmpCur.x);
                   if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
                     finalCur.y = Number(tmpCur.y);
-                  if (i < arr.length - 1) this.yCursor = this.yNewLine;
+                  if (i < arr.length - 1) this.yCursor = {yPosition: this.yNewLine, offsetX: blockX};
                 });
                 const [x, y, w, h] = [
                   blockX - this.config.box.padding * 0.5,
@@ -792,7 +796,7 @@ export class DocumentGenerator {
                     finalCur.x = Number(tmpCur.x);
                   if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
                     finalCur.y = Number(tmpCur.y);
-                  if (i < arr.length - 1) this.yCursor = this.yNewLine;
+                  if (i < arr.length - 1) this.yCursor = {yPosition: this.yNewLine, offsetX: blockX};
                 });
 
 
@@ -828,9 +832,10 @@ export class DocumentGenerator {
                   point.contenuto?.forEach(line => {
                     const offsetX = this.config.margini.sx + this.config.rientro * numRientri;
                     tmpCur = this.writeTextSection(line, params, offsetX, undefined);
-                    this.curY = this.yNewLine;
+                    // this.curY = this.yNewLine;
+                    this.yCursor = {yPosition: this.yNewLine, offsetX: offsetX}
                   })
-                  this.yCursor = this.curY + this.config.staccoriga;
+                  this.yCursor = {yPosition: (this.curY + this.config.staccoriga), offsetX: offsetX};
                 }
                 if (tmpCur.x > finalCur.x || Number.isNaN(finalCur.x))
                   finalCur.x = Number(tmpCur.x);
@@ -873,7 +878,7 @@ export class DocumentGenerator {
                 },
                 didDrawCell: (data) => {
                   this.xCursor = data.cursor.x;
-                  this.yCursor = data.cursor.y;
+                  this.yCursor = {yPosition: data.cursor.y};
                 }
               });
               finalCur = {
@@ -893,11 +898,11 @@ export class DocumentGenerator {
           if (!Number.isNaN(finalCur.x))
             this.xCursor = finalCur.x;
           if (!Number.isNaN(blockY))
-            this.yCursor = blockY;
+            this.yCursor = {yPosition: blockY, offsetX: undefined};
         }
         if (!Number.isNaN(finalCur.y))
-          this.yCursor = finalCur.y;
-        this.yCursor = this.yNewLine + this.config.staccoriga;
+          this.yCursor = {yPosition: finalCur.y, offsetX: undefined};
+        this.yCursor = {yPosition: (this.yNewLine + this.config.staccoriga), offsetX: undefined};
         this.curX = this.config.margini.sx;
       };
       if (params.numPagina) {

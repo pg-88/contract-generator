@@ -86,8 +86,9 @@ var DocumentGenerator = /** @class */ (function () {
     };
     Object.defineProperty(DocumentGenerator.prototype, "yCursor", {
         //#region setter
-        set: function (yPosition) {
+        set: function (param) {
             // this.debugCursor('#DC143C')
+            var yPosition = param.yPosition;
             var maxY = this.doc.internal.pageSize.getHeight() - this.config.margini.basso;
             if (yPosition >= this.config.margini.alto &&
                 yPosition <= maxY) {
@@ -98,6 +99,9 @@ var DocumentGenerator = /** @class */ (function () {
                 this.doc.addPage();
                 this.curY = this.config.margini.alto;
                 this.curX = this.config.margini.sx;
+                if (param.offsetX) {
+                    this.curX += param.offsetX;
+                }
             }
             else {
                 throw new Error("".concat(yPosition, " is not a valid position for y coordinate"));
@@ -116,7 +120,7 @@ var DocumentGenerator = /** @class */ (function () {
             }
             else if (xPosition > maxX) {
                 console.log("new line");
-                this.yCursor = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4;
+                this.yCursor = { yPosition: (this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4) };
                 this.curX = this.config.margini.sx;
             }
             else {
@@ -129,7 +133,7 @@ var DocumentGenerator = /** @class */ (function () {
     Object.defineProperty(DocumentGenerator.prototype, "yNewLine", {
         //#endregion
         /**
-         * # get the position of the cursor in a new line below the actual.
+         * get the position of the cursor in a new line below the actual.
          */
         get: function () {
             var newY = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4;
@@ -392,7 +396,7 @@ var DocumentGenerator = /** @class */ (function () {
                             startY = this.curY + imgParam.posizione[1];
                         }
                         this.doc.addImage(base64Image, format, startX, startY, imgParam.dimensioni[0], imgParam.dimensioni[1]);
-                        this.yCursor = startY + imgParam.dimensioni[1];
+                        this.yCursor = { yPosition: (startY + imgParam.dimensioni[1]) };
                         this.xCursor = this.curX + imgParam.dimensioni[0];
                         //this.xCursor = this.curX + startX + imgParam.dimensioni[0];
                         // this.debugCursor('#2fff00', 'imageEnd');
@@ -547,14 +551,14 @@ var DocumentGenerator = /** @class */ (function () {
         this.doc.setFillColor(this.config.box.background);
         this.doc.roundedRect(x, y, w, h, r, r, 'FD');
         this.xCursor = txtCur.x;
-        this.yCursor = txtCur.y;
+        this.yCursor = { yPosition: txtCur.y };
         for (var _b = 0, section_2 = section; _b < section_2.length; _b++) {
             var s = section_2[_b];
             var text_2 = s.text.replace(/\*\*/g, '');
             this.doc.setFont(this.doc.getFont().fontName, s.type);
             endCur = this.writeTextInLine(text_2, maxWidth, option);
         }
-        this.yCursor = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72 * 25.4);
+        this.yCursor = { yPosition: this.curY + (this.doc.getFontSize() * this.config.interlinea / 72 * 25.4) };
         return endCur;
     };
     //#endregion
@@ -606,8 +610,8 @@ var DocumentGenerator = /** @class */ (function () {
         if (offsetX && this.curX < offsetX) {
             this.xCursor = offsetX;
         }
-        if (offsetY /*&& this.curY < offsetY*/) {
-            this.yCursor = this.curY + offsetY;
+        if (offsetY && this.curY < offsetY) {
+            this.yCursor = { yPosition: this.curY + offsetY, offsetX: offsetX };
         }
         var spaceWidth = this.doc.getTextWidth(" ");
         var lineWidth = 0;
@@ -618,10 +622,10 @@ var DocumentGenerator = /** @class */ (function () {
             if (lineWidth + wordWidth >= maxWidth || this.curX + wordWidth >= netWidth) {
                 // re-set x-cursor
                 this.curX = this.config.margini.sx;
+                this.yCursor = { yPosition: this.yNewLine, offsetX: offsetX };
                 if (offsetX && this.curX < offsetX) {
                     this.xCursor = offsetX;
                 }
-                this.yCursor = this.yNewLine;
                 lineWidth = 0;
             }
             if (word !== '') {
@@ -681,7 +685,7 @@ var DocumentGenerator = /** @class */ (function () {
                                                                 if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
                                                                     finalCur.y = Number(tmpCur.y);
                                                                 if (i < arr.length - 1)
-                                                                    _this.yCursor = _this.yNewLine;
+                                                                    _this.yCursor = { yPosition: _this.yNewLine, offsetX: blockX };
                                                             });
                                                         }
                                                         else {
@@ -702,7 +706,7 @@ var DocumentGenerator = /** @class */ (function () {
                                                                 if (tmpCur_1.y > finalCur.y || Number.isNaN(finalCur.y))
                                                                     finalCur.y = Number(tmpCur_1.y);
                                                                 if (i < arr.length - 1)
-                                                                    _this.yCursor = _this.yNewLine;
+                                                                    _this.yCursor = { yPosition: _this.yNewLine, offsetX: blockX };
                                                             });
                                                             _j = [
                                                                 blockX - this_1.config.box.padding * 0.5,
@@ -725,7 +729,7 @@ var DocumentGenerator = /** @class */ (function () {
                                                                 if (tmpCur_1.y > finalCur.y || Number.isNaN(finalCur.y))
                                                                     finalCur.y = Number(tmpCur_1.y);
                                                                 if (i < arr.length - 1)
-                                                                    _this.yCursor = _this.yNewLine;
+                                                                    _this.yCursor = { yPosition: _this.yNewLine, offsetX: blockX };
                                                             });
                                                         }
                                                         else {
@@ -754,9 +758,10 @@ var DocumentGenerator = /** @class */ (function () {
                                                                 (_b = point.contenuto) === null || _b === void 0 ? void 0 : _b.forEach(function (line) {
                                                                     var offsetX = _this.config.margini.sx + _this.config.rientro * numRientri;
                                                                     tmpCur_2 = _this.writeTextSection(line, params, offsetX, undefined);
-                                                                    _this.curY = _this.yNewLine;
+                                                                    // this.curY = this.yNewLine;
+                                                                    _this.yCursor = { yPosition: _this.yNewLine, offsetX: offsetX };
                                                                 });
-                                                                this_1.yCursor = this_1.curY + this_1.config.staccoriga;
+                                                                this_1.yCursor = { yPosition: (this_1.curY + this_1.config.staccoriga), offsetX: offsetX };
                                                             }
                                                             if (tmpCur_2.x > finalCur.x || Number.isNaN(finalCur.x))
                                                                 finalCur.x = Number(tmpCur_2.x);
@@ -797,7 +802,7 @@ var DocumentGenerator = /** @class */ (function () {
                                                                 right: this_1.config.margini.dx
                                                             }, styles: __assign({}, tabData.config.styles), didDrawCell: function (data) {
                                                                 _this.xCursor = data.cursor.x;
-                                                                _this.yCursor = data.cursor.y;
+                                                                _this.yCursor = { yPosition: data.cursor.y };
                                                             } }));
                                                         finalCur = {
                                                             x: this_1.curX,
@@ -813,7 +818,7 @@ var DocumentGenerator = /** @class */ (function () {
                                                         if (!Number.isNaN(finalCur.x))
                                                             this_1.xCursor = finalCur.x;
                                                         if (!Number.isNaN(blockY))
-                                                            this_1.yCursor = blockY;
+                                                            this_1.yCursor = { yPosition: blockY, offsetX: undefined };
                                                         return [2 /*return*/];
                                                 }
                                             });
@@ -832,8 +837,8 @@ var DocumentGenerator = /** @class */ (function () {
                                         return [3 /*break*/, 1];
                                     case 4:
                                         if (!Number.isNaN(finalCur.y))
-                                            this_1.yCursor = finalCur.y;
-                                        this_1.yCursor = this_1.yNewLine + this_1.config.staccoriga;
+                                            this_1.yCursor = { yPosition: finalCur.y, offsetX: undefined };
+                                        this_1.yCursor = { yPosition: (this_1.yNewLine + this_1.config.staccoriga), offsetX: undefined };
                                         this_1.curX = this_1.config.margini.sx;
                                         return [2 /*return*/];
                                 }
