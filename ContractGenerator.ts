@@ -138,6 +138,7 @@ export interface Elenco {
   titolo: string;
   sottopunti: Array<{
     titolo: string;
+    punto?: string;
     contenuto: string[];
   }>;
 }
@@ -435,11 +436,11 @@ export class DocumentGenerator {
       if (totPages) {
         strlabel += ` ${totPages} ${pages.length - 1}`
       }
-      let bottomRight = {
-        x: this.doc.internal.pageSize.getWidth() - this.config.margini.dx,
-        y: this.doc.internal.pageSize.getHeight() - this.config.margini.basso
+      let position = {
+        x: this.doc.internal.pageSize.getWidth() *0.5,
+        y: this.doc.internal.pageSize.getHeight() - 10
       };
-      this.doc.text(strlabel, bottomRight.x, bottomRight.y, { align: 'left', baseline: 'hanging' });
+      this.doc.text(strlabel, position.x, position.y, { align: 'center', baseline: 'hanging' });
     }
   }
   //#endregion
@@ -486,7 +487,7 @@ export class DocumentGenerator {
   //#region parseText
   private parseText(text: string, params: DocumentParams): FormattedText {
     const tagRegex = /<\|(.*?)\|>/g;  // Trova i tag <|...|>
-    let content = text.replace(tagRegex, "").trim(); // Rimuove i tag e lascia solo il testo principale
+    let content = text?.replace(tagRegex, "").trim(); // Rimuove i tag e lascia solo il testo principale
     content = this.applyTemplate(content, params.dynamicFields);
     content = this.applyPartiPlaceholders(content, params.parti);
     let formattedText: FormattedText = { content };
@@ -516,7 +517,7 @@ export class DocumentGenerator {
               const offY = Number(value);
               if (Number.isNaN(offY)) throw new Error("OffsetY is not a number");
               formattedText.offsetY = offY;
-              console.log("offset")
+              console.log("offsetY", offY);
               break;
             case "allinea":
               if (value === 'centra') {
@@ -551,7 +552,6 @@ export class DocumentGenerator {
     } else {
       while (index < content.length) {
         for (const match of matches) {
-          console.log("match of matches", match);
           if (index !== match['index']) {
             sections.push({
               text: content.substring(index, match['index']),
@@ -561,12 +561,11 @@ export class DocumentGenerator {
             });
           }
           sections.push({
-            text: content.substring(match['index'], match['index'] + match[0].length ),
+            text: content.substring(match['index'], match['index'] + match[0].length),
             type: 'bold',
             start: match['index'],
             end: match['index'] + match[0].length
           });
-          console.log("sections", sections);
           index = match['index'] + match[0].length;
         }
         sections.push({
@@ -665,7 +664,6 @@ export class DocumentGenerator {
           offsetX + (write.offsetX ? write.offsetX : 0),
           offsetY + (write.offsetY ? write.offsetY : 0),
         ];
-        console.log("text to write: ", text);
         finalCur = this.writeTextInLine(text, maxWidth, option, offX, offY, write.centra);
         // this.debugCursor('#aa00aa', "finalCur");
       }
@@ -729,14 +727,12 @@ export class DocumentGenerator {
 
       // Parse contents
       for (const block of this.contenuti) {
-        // console.log("blocco", block);
         let finalCur = { x: NaN, y: NaN };
         for (const key of Object.keys(block)) {
           const [blockX, blockY] = [this.curX, this.curY];
           switch (key) {
             //#region 'testo'
             case 'testo':
-              this.debugCursor('blue', "BLOCK TESTO");
               let testo = block[key];
               if (Array.isArray(testo)) {
                 testo.forEach((riga, i, arr) => {
@@ -746,12 +742,10 @@ export class DocumentGenerator {
                   if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
                     finalCur.y = Number(tmpCur.y);
                   if (i < arr.length - 1) this.yCursor = this.yNewLine;
-                  // this.debugCursor('#FA8072');
                 });
               } else {
                 finalCur = this.writeTextSection(testo, params, blockX);
               }
-              // this.yCursor = this.curY + this.config.staccoriga;
               break;
             //#region 'testoBox'
             case 'testoBox':
@@ -768,7 +762,6 @@ export class DocumentGenerator {
                   if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
                     finalCur.y = Number(tmpCur.y);
                   if (i < arr.length - 1) this.yCursor = this.yNewLine;
-                  // this.debugCursor('#FA8072');
                 });
                 const [x, y, w, h] = [
                   blockX - this.config.box.padding * 0.5,
@@ -800,32 +793,40 @@ export class DocumentGenerator {
                   if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
                     finalCur.y = Number(tmpCur.y);
                   if (i < arr.length - 1) this.yCursor = this.yNewLine;
-                  // this.debugCursor('#FA8072');
                 });
 
 
               } else {
                 console.warn("testoBox value must be an array of strings");
               }
-              // this.yCursor = this.curY + this.config.staccoriga;
               break;
             //#region 'Punti'
             case 'punti':
               const punti = block[key] as Elenco[];
 
               for (const section of punti) {
-                // console.log("Section Title", section.titolo);
+                let numRientri = 1;
                 finalCur = this.writeTextSection(section.titolo, params);
                 this.curY += this.config.staccoriga;
+
                 let tmpCur = { x: finalCur.x, y: finalCur.y };
                 for (const point of section.sottopunti) {
-                  // console.log("Point title:", point.titolo, " point content: ", point.contenuto);
-                  // this.curX = this.config.margini.sx + this.config.rientro;
-                  const offsetX = this.config.margini.sx + this.config.rientro;
+                  numRientri = 2;
+                  const offsetX = this.config.margini.sx + this.config.rientro * numRientri;
                   tmpCur = this.writeTextSection(point.titolo, params, offsetX, undefined);
+                  numRientri++
                   this.curY = this.yNewLine;
+                  // adding numbers or symbol at the beginning of the row
+                  if (point.punto) {
+                    tmpCur = this.writeTextSection(
+                      point.punto, params,
+                      this.config.margini.sx + this.config.rientro * numRientri,
+                      undefined
+                    );
+                    numRientri++;
+                  }
                   point.contenuto?.forEach(line => {
-                    const offsetX = this.config.margini.sx + this.config.rientro * 2;
+                    const offsetX = this.config.margini.sx + this.config.rientro * numRientri;
                     tmpCur = this.writeTextSection(line, params, offsetX, undefined);
                     this.curY = this.yNewLine;
                   })
@@ -849,7 +850,6 @@ export class DocumentGenerator {
             //#region 'tabella'
             case 'tabella':
               const tabData = params.dynamicElements[block[key]];
-              // console.log("Dati tabella: ", tabData, "\n$$$$$$$font", this.doc.getFont().fontName);
               if (!tabData.config.styles) {
                 tabData.config.styles = {
                   font: this.doc.getFont().fontName,
@@ -938,7 +938,6 @@ export class DocumentGenerator {
     // copy pages on the temporary object document
 
 
-    console.log("readed documnent: ", doc);
     let copiedPages = await mergedPdf.copyPages(before, before.getPageIndices())
     copiedPages.forEach(page => {
       mergedPdf.addPage(page);

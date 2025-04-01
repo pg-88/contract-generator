@@ -357,11 +357,11 @@ var DocumentGenerator = /** @class */ (function () {
             if (totPages) {
                 strlabel += " ".concat(totPages, " ").concat(pages.length - 1);
             }
-            var bottomRight = {
-                x: this.doc.internal.pageSize.getWidth() - this.config.margini.dx,
-                y: this.doc.internal.pageSize.getHeight() - this.config.margini.basso
+            var position = {
+                x: this.doc.internal.pageSize.getWidth() * 0.5,
+                y: this.doc.internal.pageSize.getHeight() - 10
             };
-            this.doc.text(strlabel, bottomRight.x, bottomRight.y, { align: 'left', baseline: 'hanging' });
+            this.doc.text(strlabel, position.x, position.y, { align: 'center', baseline: 'hanging' });
         }
     };
     //#endregion
@@ -417,7 +417,7 @@ var DocumentGenerator = /** @class */ (function () {
     //#region parseText
     DocumentGenerator.prototype.parseText = function (text, params) {
         var tagRegex = /<\|(.*?)\|>/g; // Trova i tag <|...|>
-        var content = text.replace(tagRegex, "").trim(); // Rimuove i tag e lascia solo il testo principale
+        var content = text === null || text === void 0 ? void 0 : text.replace(tagRegex, "").trim(); // Rimuove i tag e lascia solo il testo principale
         content = this.applyTemplate(content, params.dynamicFields);
         content = this.applyPartiPlaceholders(content, params.parti);
         var formattedText = { content: content };
@@ -451,7 +451,7 @@ var DocumentGenerator = /** @class */ (function () {
                             if (Number.isNaN(offY))
                                 throw new Error("OffsetY is not a number");
                             formattedText.offsetY = offY;
-                            console.log("offset");
+                            console.log("offsetY", offY);
                             break;
                         case "allinea":
                             if (value === 'centra') {
@@ -487,7 +487,6 @@ var DocumentGenerator = /** @class */ (function () {
             while (index < content.length) {
                 for (var _i = 0, matches_1 = matches; _i < matches_1.length; _i++) {
                     var match = matches_1[_i];
-                    console.log("match of matches", match);
                     if (index !== match['index']) {
                         sections.push({
                             text: content.substring(index, match['index']),
@@ -502,7 +501,6 @@ var DocumentGenerator = /** @class */ (function () {
                         start: match['index'],
                         end: match['index'] + match[0].length
                     });
-                    console.log("sections", sections);
                     index = match['index'] + match[0].length;
                 }
                 sections.push({
@@ -592,7 +590,6 @@ var DocumentGenerator = /** @class */ (function () {
                     offsetX + (write.offsetX ? write.offsetX : 0),
                     offsetY + (write.offsetY ? write.offsetY : 0),
                 ], offX = _a[0], offY = _a[1];
-                console.log("text to write: ", text);
                 finalCur = this.writeTextInLine(text, maxWidth, option, offX, offY, write.centra);
                 // this.debugCursor('#aa00aa', "finalCur");
             }
@@ -675,7 +672,6 @@ var DocumentGenerator = /** @class */ (function () {
                                                         }
                                                         return [3 /*break*/, 8];
                                                     case 1:
-                                                        this_1.debugCursor('blue', "BLOCK TESTO");
                                                         testo = block[key];
                                                         if (Array.isArray(testo)) {
                                                             testo.forEach(function (riga, i, arr) {
@@ -686,13 +682,11 @@ var DocumentGenerator = /** @class */ (function () {
                                                                     finalCur.y = Number(tmpCur.y);
                                                                 if (i < arr.length - 1)
                                                                     _this.yCursor = _this.yNewLine;
-                                                                // this.debugCursor('#FA8072');
                                                             });
                                                         }
                                                         else {
                                                             finalCur = this_1.writeTextSection(testo, params, blockX);
                                                         }
-                                                        // this.yCursor = this.curY + this.config.staccoriga;
                                                         return [3 /*break*/, 9];
                                                     case 2:
                                                         testoBox = block[key];
@@ -709,7 +703,6 @@ var DocumentGenerator = /** @class */ (function () {
                                                                     finalCur.y = Number(tmpCur_1.y);
                                                                 if (i < arr.length - 1)
                                                                     _this.yCursor = _this.yNewLine;
-                                                                // this.debugCursor('#FA8072');
                                                             });
                                                             _j = [
                                                                 blockX - this_1.config.box.padding * 0.5,
@@ -733,30 +726,33 @@ var DocumentGenerator = /** @class */ (function () {
                                                                     finalCur.y = Number(tmpCur_1.y);
                                                                 if (i < arr.length - 1)
                                                                     _this.yCursor = _this.yNewLine;
-                                                                // this.debugCursor('#FA8072');
                                                             });
                                                         }
                                                         else {
                                                             console.warn("testoBox value must be an array of strings");
                                                         }
-                                                        // this.yCursor = this.curY + this.config.staccoriga;
                                                         return [3 /*break*/, 9];
                                                     case 3:
                                                         punti = block[key];
                                                         _loop_3 = function (section) {
-                                                            // console.log("Section Title", section.titolo);
+                                                            var numRientri = 1;
                                                             finalCur = this_1.writeTextSection(section.titolo, params);
                                                             this_1.curY += this_1.config.staccoriga;
                                                             var tmpCur_2 = { x: finalCur.x, y: finalCur.y };
                                                             for (var _m = 0, _o = section.sottopunti; _m < _o.length; _m++) {
                                                                 var point = _o[_m];
-                                                                // console.log("Point title:", point.titolo, " point content: ", point.contenuto);
-                                                                // this.curX = this.config.margini.sx + this.config.rientro;
-                                                                var offsetX = this_1.config.margini.sx + this_1.config.rientro;
+                                                                numRientri = 2;
+                                                                var offsetX = this_1.config.margini.sx + this_1.config.rientro * numRientri;
                                                                 tmpCur_2 = this_1.writeTextSection(point.titolo, params, offsetX, undefined);
+                                                                numRientri++;
                                                                 this_1.curY = this_1.yNewLine;
+                                                                // adding numbers or symbol at the beginning of the row
+                                                                if (point.punto) {
+                                                                    tmpCur_2 = this_1.writeTextSection(point.punto, params, this_1.config.margini.sx + this_1.config.rientro * numRientri, undefined);
+                                                                    numRientri++;
+                                                                }
                                                                 (_b = point.contenuto) === null || _b === void 0 ? void 0 : _b.forEach(function (line) {
-                                                                    var offsetX = _this.config.margini.sx + _this.config.rientro * 2;
+                                                                    var offsetX = _this.config.margini.sx + _this.config.rientro * numRientri;
                                                                     tmpCur_2 = _this.writeTextSection(line, params, offsetX, undefined);
                                                                     _this.curY = _this.yNewLine;
                                                                 });
@@ -784,7 +780,6 @@ var DocumentGenerator = /** @class */ (function () {
                                                         return [3 /*break*/, 9];
                                                     case 6:
                                                         tabData = params.dynamicElements[block[key]];
-                                                        // console.log("Dati tabella: ", tabData, "\n$$$$$$$font", this.doc.getFont().fontName);
                                                         if (!tabData.config.styles) {
                                                             tabData.config.styles = {
                                                                 font: this_1.doc.getFont().fontName,
@@ -911,8 +906,6 @@ var DocumentGenerator = /** @class */ (function () {
                     case 6: return [4 /*yield*/, _f.apply(_e, [_k.sent()])];
                     case 7:
                         after = _k.sent();
-                        // copy pages on the temporary object document
-                        console.log("readed documnent: ", doc);
                         return [4 /*yield*/, mergedPdf.copyPages(before, before.getPageIndices())];
                     case 8:
                         copiedPages = _k.sent();
