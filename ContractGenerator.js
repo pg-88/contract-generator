@@ -86,8 +86,9 @@ var DocumentGenerator = /** @class */ (function () {
     };
     Object.defineProperty(DocumentGenerator.prototype, "yCursor", {
         //#region setter
-        set: function (yPosition) {
+        set: function (param) {
             // this.debugCursor('#DC143C')
+            var yPosition = param.yPosition;
             var maxY = this.doc.internal.pageSize.getHeight() - this.config.margini.basso;
             if (yPosition >= this.config.margini.alto &&
                 yPosition <= maxY) {
@@ -98,6 +99,9 @@ var DocumentGenerator = /** @class */ (function () {
                 this.doc.addPage();
                 this.curY = this.config.margini.alto;
                 this.curX = this.config.margini.sx;
+                if (param.offsetX) {
+                    this.curX += param.offsetX;
+                }
             }
             else {
                 throw new Error("".concat(yPosition, " is not a valid position for y coordinate"));
@@ -116,7 +120,7 @@ var DocumentGenerator = /** @class */ (function () {
             }
             else if (xPosition > maxX) {
                 console.log("new line");
-                this.yCursor = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4;
+                this.yCursor = { yPosition: (this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4) };
                 this.curX = this.config.margini.sx;
             }
             else {
@@ -129,7 +133,7 @@ var DocumentGenerator = /** @class */ (function () {
     Object.defineProperty(DocumentGenerator.prototype, "yNewLine", {
         //#endregion
         /**
-         * # get the position of the cursor in a new line below the actual.
+         * get the position of the cursor in a new line below the actual.
          */
         get: function () {
             var newY = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72) * 25.4;
@@ -357,11 +361,11 @@ var DocumentGenerator = /** @class */ (function () {
             if (totPages) {
                 strlabel += " ".concat(totPages, " ").concat(pages.length - 1);
             }
-            var bottomRight = {
-                x: this.doc.internal.pageSize.getWidth() - this.config.margini.dx,
-                y: this.doc.internal.pageSize.getHeight() - this.config.margini.basso
+            var position = {
+                x: this.doc.internal.pageSize.getWidth() * 0.5,
+                y: this.doc.internal.pageSize.getHeight() - 10
             };
-            this.doc.text(strlabel, bottomRight.x, bottomRight.y, { align: 'left', baseline: 'hanging' });
+            this.doc.text(strlabel, position.x, position.y, { align: 'center', baseline: 'hanging' });
         }
     };
     //#endregion
@@ -392,7 +396,7 @@ var DocumentGenerator = /** @class */ (function () {
                             startY = this.curY + imgParam.posizione[1];
                         }
                         this.doc.addImage(base64Image, format, startX, startY, imgParam.dimensioni[0], imgParam.dimensioni[1]);
-                        this.yCursor = startY + imgParam.dimensioni[1];
+                        this.yCursor = { yPosition: (startY + imgParam.dimensioni[1]) };
                         this.xCursor = this.curX + imgParam.dimensioni[0];
                         //this.xCursor = this.curX + startX + imgParam.dimensioni[0];
                         // this.debugCursor('#2fff00', 'imageEnd');
@@ -417,7 +421,7 @@ var DocumentGenerator = /** @class */ (function () {
     //#region parseText
     DocumentGenerator.prototype.parseText = function (text, params) {
         var tagRegex = /<\|(.*?)\|>/g; // Trova i tag <|...|>
-        var content = text.replace(tagRegex, "").trim(); // Rimuove i tag e lascia solo il testo principale
+        var content = text === null || text === void 0 ? void 0 : text.replace(tagRegex, "").trim(); // Rimuove i tag e lascia solo il testo principale
         content = this.applyTemplate(content, params.dynamicFields);
         content = this.applyPartiPlaceholders(content, params.parti);
         var formattedText = { content: content };
@@ -440,6 +444,30 @@ var DocumentGenerator = /** @class */ (function () {
                         case "vAlign":
                             formattedText.vAlign = value;
                             break;
+                        case "offsetX":
+                            var offX = Number(value);
+                            if (Number.isNaN(offX))
+                                throw new Error("OffsetX is not a number");
+                            formattedText.offsetX = offX;
+                            break;
+                        case "offsetY":
+                            var offY = Number(value);
+                            if (Number.isNaN(offY))
+                                throw new Error("OffsetY is not a number");
+                            formattedText.offsetY = offY;
+                            console.log("offsetY", offY);
+                            break;
+                        case "allinea":
+                            if (value === 'centra') {
+                                this.xCursor = this.doc.internal.pageSize.getWidth() / 2;
+                                // formattedText.hAlign = 'center';
+                                formattedText.centra = true;
+                            } /* else if(value === 'destra') {
+                              
+                            } */
+                            else {
+                                console.warn("invalid value passed to 'allinea'");
+                            }
                     }
                 }
             }
@@ -472,7 +500,7 @@ var DocumentGenerator = /** @class */ (function () {
                         });
                     }
                     sections.push({
-                        text: content.substring(match['index'], match['index'] + match[0].length + 1),
+                        text: content.substring(match['index'], match['index'] + match[0].length),
                         type: 'bold',
                         start: match['index'],
                         end: match['index'] + match[0].length
@@ -523,14 +551,14 @@ var DocumentGenerator = /** @class */ (function () {
         this.doc.setFillColor(this.config.box.background);
         this.doc.roundedRect(x, y, w, h, r, r, 'FD');
         this.xCursor = txtCur.x;
-        this.yCursor = txtCur.y;
+        this.yCursor = { yPosition: txtCur.y };
         for (var _b = 0, section_2 = section; _b < section_2.length; _b++) {
             var s = section_2[_b];
             var text_2 = s.text.replace(/\*\*/g, '');
             this.doc.setFont(this.doc.getFont().fontName, s.type);
             endCur = this.writeTextInLine(text_2, maxWidth, option);
         }
-        this.yCursor = this.curY + (this.doc.getFontSize() * this.config.interlinea / 72 * 25.4);
+        this.yCursor = { yPosition: this.curY + (this.doc.getFontSize() * this.config.interlinea / 72 * 25.4) };
         return endCur;
     };
     //#endregion
@@ -544,7 +572,7 @@ var DocumentGenerator = /** @class */ (function () {
         var textToWrite = write.content;
         this.setupText(write.fontId);
         var option = {
-            align: write.hAlign ? write.hAlign : null,
+            // align: write.hAlign ? write.hAlign : null,
             baseline: write.vAlign ? write.vAlign : null
         };
         var boxedText = textToWrite.match(/^\^.*\^$/);
@@ -561,7 +589,12 @@ var DocumentGenerator = /** @class */ (function () {
                 var text = s.text.replace(/\*\*/g, '');
                 this.doc.setFont(this.doc.getFont().fontName, s.type);
                 // this.xCursor = startCur.x;
-                finalCur = this.writeTextInLine(text, maxWidth, option, offsetX, offsetY);
+                // update the value of offset if there is something returned by parseText
+                var _a = [
+                    offsetX + (write.offsetX ? write.offsetX : 0),
+                    offsetY + (write.offsetY ? write.offsetY : 0),
+                ], offX = _a[0], offY = _a[1];
+                finalCur = this.writeTextInLine(text, maxWidth, option, offX, offY, write.centra);
                 // this.debugCursor('#aa00aa', "finalCur");
             }
         }
@@ -572,10 +605,13 @@ var DocumentGenerator = /** @class */ (function () {
     };
     //#endregion
     //#region writeTextInLine
-    DocumentGenerator.prototype.writeTextInLine = function (text, maxWidth, option, offsetX, offsetY) {
+    DocumentGenerator.prototype.writeTextInLine = function (text, maxWidth, option, offsetX, offsetY, centra) {
         var words = text.split(" ");
         if (offsetX && this.curX < offsetX) {
             this.xCursor = offsetX;
+        }
+        if (offsetY && this.curY < offsetY) {
+            this.yCursor = { yPosition: this.curY + offsetY, offsetX: offsetX };
         }
         var spaceWidth = this.doc.getTextWidth(" ");
         var lineWidth = 0;
@@ -584,15 +620,13 @@ var DocumentGenerator = /** @class */ (function () {
             var word = words_1[_i];
             var wordWidth = this.doc.getTextWidth(word);
             if (lineWidth + wordWidth >= maxWidth || this.curX + wordWidth >= netWidth) {
-                // this.debugCursor("pink", `lineWidth: ${(lineWidth + wordWidth).toFixed(3)}; maxWidth: ${maxWidth.toFixed(3)}`);
                 // re-set x-cursor
                 this.curX = this.config.margini.sx;
+                this.yCursor = { yPosition: this.yNewLine, offsetX: offsetX };
                 if (offsetX && this.curX < offsetX) {
                     this.xCursor = offsetX;
                 }
-                this.yCursor = this.yNewLine;
                 lineWidth = 0;
-                // this.debugCursor("#fff71a", "newLine");
             }
             if (word !== '') {
                 this.doc.text(word, this.curX, this.curY, option);
@@ -651,14 +685,12 @@ var DocumentGenerator = /** @class */ (function () {
                                                                 if (tmpCur.y > finalCur.y || Number.isNaN(finalCur.y))
                                                                     finalCur.y = Number(tmpCur.y);
                                                                 if (i < arr.length - 1)
-                                                                    _this.yCursor = _this.yNewLine;
-                                                                // this.debugCursor('#FA8072');
+                                                                    _this.yCursor = { yPosition: _this.yNewLine, offsetX: blockX };
                                                             });
                                                         }
                                                         else {
                                                             finalCur = this_1.writeTextSection(testo, params, blockX);
                                                         }
-                                                        // this.yCursor = this.curY + this.config.staccoriga;
                                                         return [3 /*break*/, 9];
                                                     case 2:
                                                         testoBox = block[key];
@@ -674,8 +706,7 @@ var DocumentGenerator = /** @class */ (function () {
                                                                 if (tmpCur_1.y > finalCur.y || Number.isNaN(finalCur.y))
                                                                     finalCur.y = Number(tmpCur_1.y);
                                                                 if (i < arr.length - 1)
-                                                                    _this.yCursor = _this.yNewLine;
-                                                                // this.debugCursor('#FA8072');
+                                                                    _this.yCursor = { yPosition: _this.yNewLine, offsetX: blockX };
                                                             });
                                                             _j = [
                                                                 blockX - this_1.config.box.padding * 0.5,
@@ -698,35 +729,39 @@ var DocumentGenerator = /** @class */ (function () {
                                                                 if (tmpCur_1.y > finalCur.y || Number.isNaN(finalCur.y))
                                                                     finalCur.y = Number(tmpCur_1.y);
                                                                 if (i < arr.length - 1)
-                                                                    _this.yCursor = _this.yNewLine;
-                                                                // this.debugCursor('#FA8072');
+                                                                    _this.yCursor = { yPosition: _this.yNewLine, offsetX: blockX };
                                                             });
                                                         }
                                                         else {
                                                             console.warn("testoBox value must be an array of strings");
                                                         }
-                                                        // this.yCursor = this.curY + this.config.staccoriga;
                                                         return [3 /*break*/, 9];
                                                     case 3:
                                                         punti = block[key];
                                                         _loop_3 = function (section) {
-                                                            // console.log("Section Title", section.titolo);
+                                                            var numRientri = 1;
                                                             finalCur = this_1.writeTextSection(section.titolo, params);
                                                             this_1.curY += this_1.config.staccoriga;
                                                             var tmpCur_2 = { x: finalCur.x, y: finalCur.y };
                                                             for (var _m = 0, _o = section.sottopunti; _m < _o.length; _m++) {
                                                                 var point = _o[_m];
-                                                                // console.log("Point title:", point.titolo, " point content: ", point.contenuto);
-                                                                // this.curX = this.config.margini.sx + this.config.rientro;
-                                                                var offset = this_1.config.margini.sx + this_1.config.rientro;
-                                                                tmpCur_2 = this_1.writeTextSection(point.titolo, params, offset);
+                                                                numRientri = 2;
+                                                                var offsetX = this_1.config.margini.sx + this_1.config.rientro * numRientri;
+                                                                tmpCur_2 = this_1.writeTextSection(point.titolo, params, offsetX, undefined);
+                                                                numRientri++;
                                                                 this_1.curY = this_1.yNewLine;
+                                                                // adding numbers or symbol at the beginning of the row
+                                                                if (point.punto) {
+                                                                    tmpCur_2 = this_1.writeTextSection(point.punto, params, this_1.config.margini.sx + this_1.config.rientro * numRientri, undefined);
+                                                                    numRientri++;
+                                                                }
                                                                 (_b = point.contenuto) === null || _b === void 0 ? void 0 : _b.forEach(function (line) {
-                                                                    var offset = _this.config.margini.sx + _this.config.rientro * 2;
-                                                                    tmpCur_2 = _this.writeTextSection(line, params, offset);
-                                                                    _this.curY = _this.yNewLine;
+                                                                    var offsetX = _this.config.margini.sx + _this.config.rientro * numRientri;
+                                                                    tmpCur_2 = _this.writeTextSection(line, params, offsetX, undefined);
+                                                                    // this.curY = this.yNewLine;
+                                                                    _this.yCursor = { yPosition: _this.yNewLine, offsetX: offsetX };
                                                                 });
-                                                                this_1.yCursor = this_1.curY + this_1.config.staccoriga;
+                                                                this_1.yCursor = { yPosition: (this_1.curY + this_1.config.staccoriga), offsetX: offsetX };
                                                             }
                                                             if (tmpCur_2.x > finalCur.x || Number.isNaN(finalCur.x))
                                                                 finalCur.x = Number(tmpCur_2.x);
@@ -750,7 +785,6 @@ var DocumentGenerator = /** @class */ (function () {
                                                         return [3 /*break*/, 9];
                                                     case 6:
                                                         tabData = params.dynamicElements[block[key]];
-                                                        // console.log("Dati tabella: ", tabData, "\n$$$$$$$font", this.doc.getFont().fontName);
                                                         if (!tabData.config.styles) {
                                                             tabData.config.styles = {
                                                                 font: this_1.doc.getFont().fontName,
@@ -768,7 +802,7 @@ var DocumentGenerator = /** @class */ (function () {
                                                                 right: this_1.config.margini.dx
                                                             }, styles: __assign({}, tabData.config.styles), didDrawCell: function (data) {
                                                                 _this.xCursor = data.cursor.x;
-                                                                _this.yCursor = data.cursor.y;
+                                                                _this.yCursor = { yPosition: data.cursor.y };
                                                             } }));
                                                         finalCur = {
                                                             x: this_1.curX,
@@ -784,7 +818,7 @@ var DocumentGenerator = /** @class */ (function () {
                                                         if (!Number.isNaN(finalCur.x))
                                                             this_1.xCursor = finalCur.x;
                                                         if (!Number.isNaN(blockY))
-                                                            this_1.yCursor = blockY;
+                                                            this_1.yCursor = { yPosition: blockY, offsetX: undefined };
                                                         return [2 /*return*/];
                                                 }
                                             });
@@ -803,8 +837,8 @@ var DocumentGenerator = /** @class */ (function () {
                                         return [3 /*break*/, 1];
                                     case 4:
                                         if (!Number.isNaN(finalCur.y))
-                                            this_1.yCursor = finalCur.y;
-                                        this_1.yCursor = this_1.yNewLine + this_1.config.staccoriga;
+                                            this_1.yCursor = { yPosition: finalCur.y, offsetX: undefined };
+                                        this_1.yCursor = { yPosition: (this_1.yNewLine + this_1.config.staccoriga), offsetX: undefined };
                                         this_1.curX = this_1.config.margini.sx;
                                         return [2 /*return*/];
                                 }
@@ -877,8 +911,6 @@ var DocumentGenerator = /** @class */ (function () {
                     case 6: return [4 /*yield*/, _f.apply(_e, [_k.sent()])];
                     case 7:
                         after = _k.sent();
-                        // copy pages on the temporary object document
-                        console.log("readed documnent: ", doc);
                         return [4 /*yield*/, mergedPdf.copyPages(before, before.getPageIndices())];
                     case 8:
                         copiedPages = _k.sent();
